@@ -22,7 +22,7 @@ const STRING_DATA = {
   "Head": ["Lynx", "Lynx Tour", "Hawk Touch"],
   "Wilson": ["NXT", "Sensation", "Revolve"],
   "Tecnifibre": ["Razor Code", "X-One Biphase"],
-  "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament"]
+  "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament", "Poly"]
 };
 
 let crossTouched = false;
@@ -317,4 +317,5 @@ document.addEventListener("click", e => {
 if ($("importFile")) $("importFile").addEventListener("change", handleImport);
 
 initDropdowns();
+
 render();
