@@ -153,9 +153,11 @@
         <h2>Players</h2>
         <div class="row" style="margin-top: 0;">
           <input id="search" placeholder="Search..." style="width: 120px; margin-top:0;" />
-          <select id="sortBy" style="width: 100px; margin-top:0; padding: 10px;">
+          <select id="sortBy" style="width: 110px; margin-top:0; padding: 10px;">
             <option value="name">A-Z</option>
             <option value="newest">Recent</option>
+            <option value="ratingHigh">Rating (High)</option>
+            <option value="ratingLow">Rating (Low)</option>
           </select>
         </div>
       </div>
@@ -164,11 +166,13 @@
     </section>
   </main>
 
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
   <script src="./app.js"></script>
 
   <script>
     if ("serviceWorker" in navigator) {
-      // Corrected path to match your service-worker.js file name
       navigator.serviceWorker.register("./sw.js")
         .then(() => console.log("Service Worker Registered"))
         .catch(err => console.log("SW Registration Failed", err));
