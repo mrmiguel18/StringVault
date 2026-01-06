@@ -262,3 +262,8 @@ $("sortBy").addEventListener("change", render);
 $("cancelEdit").addEventListener("click", resetForm);
 
 initDropdowns();
+// This will try to save a test message the second the page loads
+db.collection("test_connection").add({
+    status: "Testing Firebase sync",
+    time: new Date().toISOString()
+}).then(() => console.log("CONNECTION SUCCESSFUL! Check your Firebase Console now."));
