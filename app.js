@@ -1,4 +1,4 @@
-/* StringIQ — app.js (Full Version: Auth, Identity, Toolbox, & CRUD) */
+/* StringIQ — app.js (Comprehensive Data Version) */
 
 // 1. YOUR FIREBASE CONFIG
 const firebaseConfig = {
@@ -21,37 +21,56 @@ const $ = (id) => document.getElementById(id);
 let currentUserRole = "player"; 
 let allPlayers = [];
 
+// --- DATASETS ---
+const RACKET_DATA = {
+    "Yonex": {
+        "EZONE": ["EZONE 98", "EZONE 98 Tour", "EZONE 100", "EZONE 100L", "EZONE 100+", "EZONE 105", "EZONE Ace", "EZONE Game"],
+        "VCORE": ["VCORE 95", "VCORE 98", "VCORE 98 Tour", "VCORE 100", "VCORE 100L", "VCORE 100+", "VCORE Game", "VCORE Ace"],
+        "Percept": ["Percept 97", "Percept 97H", "Percept 100", "Percept 100D", "Percept 100L"]
+    },
+    "Wilson": {
+        "Blade": ["Blade 98 V9 (16x19)", "Blade 98 V9 (18x20)", "Blade 100 V9", "Blade 100L", "Blade 104", "Blade Pro"],
+        "Pro Staff": ["Pro Staff 97 V14", "Pro Staff 97L V14", "Pro Staff X", "Pro Staff RF 97"],
+        "Ultra": ["Ultra 100 V4", "Ultra 100L", "Ultra 100UL", "Ultra 95", "Ultra Tour"],
+        "Clash": ["Clash 100 V2", "Clash 100 Pro", "Clash 100L", "Clash 98", "Clash 108"]
+    },
+    "Babolat": {
+        "Pure Drive": ["Pure Drive", "Pure Drive 98", "Pure Drive Tour", "Pure Drive Team", "Pure Drive Lite", "Pure Drive Plus", "Pure Drive VS", "Pure Drive Wimbledon"],
+        "Pure Aero": ["Pure Aero", "Pure Aero 98", "Pure Aero Tour", "Pure Aero Team", "Pure Aero Lite", "Pure Aero Plus", "Pure Aero Rafa", "Pure Aero Rafa Origin"],
+        "Pure Strike": ["Pure Strike 98 (16x19)", "Pure Strike 98 (18x20)", "Pure Strike 100", "Pure Strike Tour", "Pure Strike Team", "Pure Strike Lite"]
+    },
+    "Solinco": {
+        "Whiteout": ["Whiteout 305 (16x19)", "Whiteout 305 (18x20)", "Whiteout 290", "Whiteout XTD"],
+        "Blackout": ["Blackout 300", "Blackout 300 XTD", "Blackout 285", "Blackout Team"]
+    }
+};
+
+const STRING_DATA = {
+    "Luxilon": ["ALU Power", "ALU Power Soft", "4G", "4G Soft", "Element", "Big Banger Original"],
+    "Solinco": ["Hyper-G", "Hyper-G Soft", "Tour Bite", "Tour Bite Soft", "Confidential", "Outlast"],
+    "Babolat": ["RPM Blast", "RPM Rough", "RPM Team", "VS Touch (Natural Gut)"],
+    "Yonex": ["Poly Tour Pro", "Poly Tour Rev", "Poly Tour Fire", "Poly Tour Drive"],
+    "Head": ["Lynx Tour", "Hawk Touch", "Lynx", "Sonic Pro", "RIP Control"],
+    "Wilson": ["NXT", "NXT Tour", "Sensation", "Natural Gut"],
+    "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament", "Poly", "Kevlar", "Hybrid"]
+};
+
 // --- AUTHENTICATION & IDENTITY GATE ---
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         try {
             const email = user.email.toLowerCase();
             let doc = await db.collection("approved_users").doc(email).get();
-            
-            // Auto-Approval logic for new users
             if (!doc.exists) {
-                await db.collection("approved_users").doc(email).set({
-                    role: "player",
-                    createdAt: Date.now()
-                });
+                await db.collection("approved_users").doc(email).set({ role: "player", createdAt: Date.now() });
                 doc = await db.collection("approved_users").doc(email).get();
             }
-
             currentUserRole = doc.data().role || "player";
-
-            // Show/Hide Admin Dashboard button based on role
-            if ($("adminLink")) {
-                $("adminLink").style.display = (currentUserRole === "admin") ? "block" : "none";
-            }
-
+            if ($("adminLink")) $("adminLink").style.display = (currentUserRole === "admin") ? "block" : "none";
             $("authScreen").style.display = "none";
             $("appContent").style.display = "block";
             initApp(); 
-            
-        } catch (error) {
-            console.error("Auth state error:", error);
-            auth.signOut();
-        }
+        } catch (error) { console.error("Auth error:", error); auth.signOut(); }
     } else {
         $("authScreen").style.display = "flex";
         $("appContent").style.display = "none";
@@ -61,23 +80,16 @@ auth.onAuthStateChanged(async (user) => {
 // --- ADMIN DASHBOARD ---
 async function openAdminDashboard() {
     if (currentUserRole !== "admin") return alert("Unauthorized access.");
-
     const querySnapshot = await db.collection("approved_users").get();
     let userList = "Current Users:\n------------------\n";
-    
-    querySnapshot.forEach((doc) => {
-        userList += `${doc.id} [${doc.data().role}]\n`;
-    });
-
+    querySnapshot.forEach((doc) => { userList += `${doc.id} [${doc.data().role}]\n`; });
     const targetEmail = prompt(userList + "\nEnter user email to change role:");
     if (targetEmail) {
         const newRole = prompt("Enter new role (admin or player):").toLowerCase();
         if (newRole === "admin" || newRole === "player") {
             await db.collection("approved_users").doc(targetEmail.toLowerCase().trim()).update({ role: newRole });
             alert("User updated!");
-        } else {
-            alert("Invalid role choice.");
-        }
+        } else { alert("Invalid role choice."); }
     }
 }
 
@@ -85,39 +97,64 @@ async function openAdminDashboard() {
 function calculateTensionLoss() {
     const dateInput = $("stringingDate").value;
     if (!dateInput) return;
-
     const start = new Date(dateInput);
     const today = new Date();
     const days = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-
-    let lossPercent = 0;
-    if (days >= 1) lossPercent = 10 + (days * 0.8);
-    if (days > 45) lossPercent = 40; // Hard cap
-
+    let lossPercent = (days >= 1) ? 10 + (days * 0.8) : 0;
+    if (days > 45) lossPercent = 40; 
     const result = $("tensionResult");
+    const isCritical = lossPercent > 22;
     result.innerHTML = days < 0 ? "Invalid Date" : 
-        `Loss: <strong>${lossPercent.toFixed(1)}%</strong><br><small>${days} days old</small>`;
-    
-    result.style.color = lossPercent > 22 ? "#ff4b4b" : "#2ecc71";
+        `Loss: <strong>${lossPercent.toFixed(1)}%</strong><br>
+         <small>${days} days old</small><br>
+         <div style="margin-top:5px; font-size:11px; font-weight:bold;">
+            ${isCritical ? "⚠️ RESTRING RECOMMENDED" : "✅ TENSION STABLE"}
+         </div>`;
+    result.style.color = isCritical ? "#ff4b4b" : "#2ecc71";
 }
 
-// --- DATA & UI LOGIC ---
-const RACKET_DATA = {
-    "Yonex": ["EZONE 98", "EZONE 100", "VCORE 98", "VCORE 100", "Percept 97", "Percept 100"],
-    "Wilson": ["Blade 98 V9", "Pro Staff 97 V14", "Ultra 100 V4", "Clash 100 V2"],
-    "Head": ["Speed MP", "Radical MP", "Extreme MP", "Gravity MP", "Boom MP"],
-    "Babolat": ["Pure Drive", "Pure Aero", "Pure Strike 98"],
-    "Solinco": ["Whiteout 305", "Blackout 300"]
-};
+// --- INITIALIZE DROPDOWNS ---
+function initDropdowns() {
+    // Populate Rackets
+    const rackEl = $("racketModel");
+    if (rackEl) {
+        rackEl.innerHTML = '<option value="">-- Select Racket --</option>';
+        for (const [brand, seriesObj] of Object.entries(RACKET_DATA)) {
+            const group = document.createElement("optgroup");
+            group.label = brand;
+            for (const [series, models] of Object.entries(seriesObj)) {
+                models.forEach(m => {
+                    const option = new Option(`${brand} ${m}`, `${brand} ${m}`);
+                    group.appendChild(option);
+                });
+            }
+            rackEl.appendChild(group);
+        }
+    }
 
-const STRING_DATA = {
-    "Luxilon": ["ALU Power", "4G", "Element"],
-    "Solinco": ["Hyper-G", "Tour Bite", "Confidential"],
-    "Babolat": ["RPM Blast", "VS Touch (Gut)"],
-    "Yonex": ["Poly Tour Pro", "Poly Tour Rev"],
-    "Head": ["Lynx Tour", "Hawk Touch"],
-    "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament", "Poly"]
-};
+    // Populate Strings (Main & Cross)
+    const populateStrings = (el) => {
+        if (!el) return;
+        el.innerHTML = '<option value="">-- Select String --</option>';
+        for (const [brand, models] of Object.entries(STRING_DATA)) {
+            const group = document.createElement("optgroup");
+            group.label = brand;
+            models.forEach(m => group.appendChild(new Option(`${brand} ${m}`, `${brand} ${m}`)));
+            el.appendChild(group);
+        }
+    };
+    populateStrings($("stringMain"));
+    populateStrings($("stringCross"));
+
+    // Populate Tensions (extended range to 70 for gut)
+    const tm = $("tensionMain"), tc = $("tensionCross");
+    if (tm && tm.options.length <= 1) {
+        for(let i=35; i<=70; i++) {
+            tm.add(new Option(i + " lbs", i));
+            tc.add(new Option(i + " lbs", i));
+        }
+    }
+}
 
 function initApp() {
     db.collection("players").onSnapshot((snapshot) => {
@@ -182,11 +219,8 @@ function render() {
 // --- CRUD OPERATIONS ---
 async function deletePlayer(id) {
     if (confirm("Are you sure you want to delete this player?")) {
-        try { 
-            await db.collection("players").doc(id).delete(); 
-        } catch(e) { 
-            alert("Permission Denied."); 
-        }
+        try { await db.collection("players").doc(id).delete(); } 
+        catch(e) { alert("Permission Denied."); }
     }
 }
 
@@ -208,7 +242,8 @@ function editPlayer(id) {
 $("playerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = $("playerId").value || uid();
-    
+    const machineUsed = $("usedBallMachine").checked;
+
     const data = {
         name: $("name").value.trim(),
         utr: $("utr").value,
@@ -216,7 +251,8 @@ $("playerForm").addEventListener("submit", async (e) => {
         tensionMain: $("tensionMain").value,
         tensionCross: $("tensionCross").value,
         setupRating: $("setupRating").value,
-        usedBallMachine: $("usedBallMachine").checked,
+        weeklyFeeling: $("weeklyFeeling") ? $("weeklyFeeling").value : null,
+        usedBallMachine: machineUsed,
         notes: $("notes").value.trim(),
         updatedAt: Date.now(),
         lastUpdatedBy: auth.currentUser.email.toLowerCase()
@@ -224,72 +260,19 @@ $("playerForm").addEventListener("submit", async (e) => {
 
     try {
         await db.collection("players").doc(id).set(data);
+        if (machineUsed) {
+            alert("Profile Saved! \n\n💡 According to our data, players have better weekly feeling when practicing with a ball machine. Ball machine recommended!");
+        } else {
+            alert("Profile Saved!");
+        }
         $("playerId").value = "";
         $("playerForm").reset();
-        alert("Profile Saved!");
-    } catch (err) {
-        alert("Permission Denied.");
-    }
+    } catch (err) { alert("Permission Denied."); }
 });
 
 // --- AUTH HANDLERS ---
-async function handleGoogleLogin() {
-    try { await auth.signInWithPopup(googleProvider); } 
-    catch (e) { alert(e.message); }
-}
-
-async function handleEmailLogin() {
-    const email = $("loginEmail").value.toLowerCase().trim();
-    const pass = $("loginPass").value;
-    try { await auth.signInWithEmailAndPassword(email, pass); }
-    catch (e) { alert(e.message); }
-}
-
-async function handleEmailSignUp() {
-    const email = $("loginEmail").value.toLowerCase().trim();
-    const pass = $("loginPass").value;
-    if(confirm("Create account? You will be authorized as a player.")) {
-        try { await auth.createUserWithEmailAndPassword(email, pass); } 
-        catch (e) { alert(e.message); }
-    }
-}
-
-async function handleResetPassword() {
-    const email = $("loginEmail").value;
-    if(!email) return alert("Enter your email address first.");
-    try {
-        await auth.sendPasswordResetEmail(email);
-        alert("Password reset link sent!");
-    } catch (e) { alert(e.message); }
-}
-
-async function handleLogout() {
-    if(confirm("Log out of StringIQ?")) await auth.signOut();
-}
-
-// --- DROPDOWNS & HELPERS ---
-function initDropdowns() {
-    const populate = (el, data) => {
-        if (!el) return;
-        el.innerHTML = '<option value="">-- Select --</option>';
-        for (const [brand, models] of Object.entries(data)) {
-            const group = document.createElement("optgroup");
-            group.label = brand;
-            models.forEach(m => group.appendChild(new Option(`${brand} ${m}`, `${brand} ${m}`)));
-            el.appendChild(group);
-        }
-    };
-    populate($("racketModel"), RACKET_DATA);
-    
-    // Fill Tension selects if empty
-    const tm = $("tensionMain"), tc = $("tensionCross");
-    if (tm && tm.options.length <= 1) {
-        for(let i=40; i<=65; i++) {
-            tm.add(new Option(i + " lbs", i));
-            tc.add(new Option(i + " lbs", i));
-        }
-    }
-}
+async function handleGoogleLogin() { try { await auth.signInWithPopup(googleProvider); } catch (e) { alert(e.message); } }
+async function handleLogout() { if(confirm("Log out of StringIQ?")) await auth.signOut(); }
 
 if($("search")) $("search").addEventListener("input", render);
 if($("sortBy")) $("sortBy").addEventListener("change", render);
