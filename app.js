@@ -1,4 +1,4 @@
-/* StringIQ — app.js (Comprehensive Data Version) */
+/* StringIQ — app.js (Final Integrated Version) */
 
 // 1. YOUR FIREBASE CONFIG
 const firebaseConfig = {
@@ -55,7 +55,7 @@ const STRING_DATA = {
     "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament", "Poly", "Kevlar", "Hybrid"]
 };
 
-// --- AUTHENTICATION & IDENTITY GATE ---
+// --- AUTH & INITIALIZATION ---
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         try {
@@ -77,23 +77,7 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// --- ADMIN DASHBOARD ---
-async function openAdminDashboard() {
-    if (currentUserRole !== "admin") return alert("Unauthorized access.");
-    const querySnapshot = await db.collection("approved_users").get();
-    let userList = "Current Users:\n------------------\n";
-    querySnapshot.forEach((doc) => { userList += `${doc.id} [${doc.data().role}]\n`; });
-    const targetEmail = prompt(userList + "\nEnter user email to change role:");
-    if (targetEmail) {
-        const newRole = prompt("Enter new role (admin or player):").toLowerCase();
-        if (newRole === "admin" || newRole === "player") {
-            await db.collection("approved_users").doc(targetEmail.toLowerCase().trim()).update({ role: newRole });
-            alert("User updated!");
-        } else { alert("Invalid role choice."); }
-    }
-}
-
-// --- TENSION LOSS PREDICTOR (TOOLBOX) ---
+// --- TOOLBOX ---
 function calculateTensionLoss() {
     const dateInput = $("stringingDate").value;
     if (!dateInput) return;
@@ -105,17 +89,15 @@ function calculateTensionLoss() {
     const result = $("tensionResult");
     const isCritical = lossPercent > 22;
     result.innerHTML = days < 0 ? "Invalid Date" : 
-        `Loss: <strong>${lossPercent.toFixed(1)}%</strong><br>
-         <small>${days} days old</small><br>
+        `Loss: <strong>${lossPercent.toFixed(1)}%</strong><br><small>${days} days old</small><br>
          <div style="margin-top:5px; font-size:11px; font-weight:bold;">
             ${isCritical ? "⚠️ RESTRING RECOMMENDED" : "✅ TENSION STABLE"}
          </div>`;
     result.style.color = isCritical ? "#ff4b4b" : "#2ecc71";
 }
 
-// --- INITIALIZE DROPDOWNS ---
+// --- UI POPULATION ---
 function initDropdowns() {
-    // Populate Rackets
     const rackEl = $("racketModel");
     if (rackEl) {
         rackEl.innerHTML = '<option value="">-- Select Racket --</option>';
@@ -123,16 +105,12 @@ function initDropdowns() {
             const group = document.createElement("optgroup");
             group.label = brand;
             for (const [series, models] of Object.entries(seriesObj)) {
-                models.forEach(m => {
-                    const option = new Option(`${brand} ${m}`, `${brand} ${m}`);
-                    group.appendChild(option);
-                });
+                models.forEach(m => group.appendChild(new Option(`${brand} ${m}`, `${brand} ${m}`)));
             }
             rackEl.appendChild(group);
         }
     }
 
-    // Populate Strings (Main & Cross)
     const populateStrings = (el) => {
         if (!el) return;
         el.innerHTML = '<option value="">-- Select String --</option>';
@@ -146,7 +124,6 @@ function initDropdowns() {
     populateStrings($("stringMain"));
     populateStrings($("stringCross"));
 
-    // Populate Tensions (extended range to 70 for gut)
     const tm = $("tensionMain"), tc = $("tensionCross");
     if (tm && tm.options.length <= 1) {
         for(let i=35; i<=70; i++) {
@@ -156,6 +133,7 @@ function initDropdowns() {
     }
 }
 
+// --- CORE APP LOGIC ---
 function initApp() {
     db.collection("players").onSnapshot((snapshot) => {
         allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -164,66 +142,34 @@ function initApp() {
     initDropdowns();
 }
 
-function uid() { return Math.random().toString(16).slice(2) + Date.now().toString(16); }
-function escapeHtml(str) { return String(str || "").replace(/[&<>"']/g, s => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[s])); }
-
-// --- RENDER LIST ---
 function render() {
     const list = $("playerList");
-    const sortVal = $("sortBy")?.value || "name";
     const q = ($("search")?.value || "").toLowerCase().trim();
-    const userEmail = auth.currentUser?.email.toLowerCase();
-    
     let filtered = allPlayers.filter(p => (p.name || "").toLowerCase().includes(q));
-
-    filtered.sort((a, b) => {
-        if (sortVal === "ratingHigh") return (Number(b.setupRating) || 0) - (Number(a.setupRating) || 0);
-        if (sortVal === "ratingLow") return (Number(a.setupRating) || 0) - (Number(b.setupRating) || 0);
-        if (sortVal === "newest") return (b.updatedAt || 0) - (a.updatedAt || 0);
-        return (a.name || "").localeCompare(b.name || "");
-    });
-
     list.innerHTML = "";
     $("empty").style.display = filtered.length ? "none" : "block";
 
     filtered.forEach(p => {
         const div = document.createElement("div");
         div.className = "item";
-        const setupHigh = Number(p.setupRating) >= 85;
-        const canEdit = (p.lastUpdatedBy === userEmail) || (currentUserRole === "admin");
-        
+        const canEdit = (p.lastUpdatedBy === auth.currentUser.email.toLowerCase()) || (currentUserRole === "admin");
         div.innerHTML = `
-            <div class="title">
-                <h3>${escapeHtml(p.name)}</h3>
-                <div class="actions">
-                    <button class="btn" style="font-size:11px; padding:4px 8px;" onclick="viewHistory('${p.id}')">History</button>
-                    ${canEdit ? `<button class="btn" onclick="editPlayer('${p.id}')">Edit</button>` : ""}
-                    ${canEdit ? `<button class="btn" onclick="deletePlayer('${p.id}')">Delete</button>` : ""}
-                </div>
-            </div>
+            <div class="title"><h3>${escapeHtml(p.name)}</h3></div>
             <div class="badges">
-                <span class="badge" style="${setupHigh ? 'border-color:#4b79ff;color:#4b79ff;font-weight:bold;' : ''}">
-                    Setup: ${p.setupRating || 0}/100 ${setupHigh ? '🔥' : ''}
-                </span>
                 <span class="badge">UTR: ${p.utr || 'N/A'}</span>
                 <span class="badge">${escapeHtml(p.racketModel)}</span>
                 <span class="badge">${p.tensionMain}/${p.tensionCross} lbs</span>
                 ${p.usedBallMachine ? '<span class="badge" style="background:#4b79ff; color:white; border:none;">Ball Machine</span>' : ''}
             </div>
-            ${p.notes ? `<p>${escapeHtml(p.notes)}</p>` : ""}
+            <div class="actions" style="margin-top:10px;">
+                ${canEdit ? `<button class="btn" onclick="editPlayer('${p.id}')">Edit</button>` : ""}
+            </div>
         `;
         list.appendChild(div);
     });
 }
 
-// --- CRUD OPERATIONS ---
-async function deletePlayer(id) {
-    if (confirm("Are you sure you want to delete this player?")) {
-        try { await db.collection("players").doc(id).delete(); } 
-        catch(e) { alert("Permission Denied."); }
-    }
-}
-
+// --- UPDATED EDIT & SUBMIT LOGIC ---
 function editPlayer(id) {
     const p = allPlayers.find(x => x.id === id);
     if (!p) return;
@@ -231,9 +177,12 @@ function editPlayer(id) {
     $("name").value = p.name || "";
     $("utr").value = p.utr || "";
     $("racketModel").value = p.racketModel || "";
+    $("stringMain").value = p.stringMain || ""; // Added logic
+    $("stringCross").value = p.stringCross || ""; // Added logic
     $("tensionMain").value = p.tensionMain || "";
     $("tensionCross").value = p.tensionCross || "";
     $("setupRating").value = p.setupRating || "";
+    if($("weeklyFeeling")) $("weeklyFeeling").value = p.weeklyFeeling || 50; // Added logic
     $("usedBallMachine").checked = p.usedBallMachine || false;
     $("notes").value = p.notes || "";
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -241,17 +190,19 @@ function editPlayer(id) {
 
 $("playerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const id = $("playerId").value || uid();
+    const id = $("playerId").value || Math.random().toString(16).slice(2);
     const machineUsed = $("usedBallMachine").checked;
 
     const data = {
         name: $("name").value.trim(),
         utr: $("utr").value,
         racketModel: $("racketModel").value,
+        stringMain: $("stringMain").value, // Captured
+        stringCross: $("stringCross").value, // Captured
         tensionMain: $("tensionMain").value,
         tensionCross: $("tensionCross").value,
         setupRating: $("setupRating").value,
-        weeklyFeeling: $("weeklyFeeling") ? $("weeklyFeeling").value : null,
+        weeklyFeeling: $("weeklyFeeling") ? $("weeklyFeeling").value : 50, // Captured
         usedBallMachine: machineUsed,
         notes: $("notes").value.trim(),
         updatedAt: Date.now(),
@@ -267,12 +218,10 @@ $("playerForm").addEventListener("submit", async (e) => {
         }
         $("playerId").value = "";
         $("playerForm").reset();
-    } catch (err) { alert("Permission Denied."); }
+    } catch (err) { alert("Error saving profile."); }
 });
 
-// --- AUTH HANDLERS ---
+// --- HELPERS ---
+function escapeHtml(str) { return String(str || "").replace(/[&<>"']/g, s => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[s])); }
 async function handleGoogleLogin() { try { await auth.signInWithPopup(googleProvider); } catch (e) { alert(e.message); } }
-async function handleLogout() { if(confirm("Log out of StringIQ?")) await auth.signOut(); }
-
-if($("search")) $("search").addEventListener("input", render);
-if($("sortBy")) $("sortBy").addEventListener("change", render);
+async function handleLogout() { if(confirm("Log out?")) await auth.signOut(); }
