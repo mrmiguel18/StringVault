@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StringIQ</title>
+  <title>StringVault.us</title>
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#111111" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,7 +15,10 @@
 
   <div id="authScreen" class="wrap" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh;">
     <section class="card" style="width: 100%; max-width: 400px; text-align: center;">
-      <h1 style="margin-bottom: 5px;">StringIQ</h1>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
+        <img src="./icons/icon-192.png" width="40" height="40" style="border-radius: 8px;">
+        <h1>StringVault<span style="color: var(--accent);">.us</span></h1>
+      </div>
       <p style="margin-bottom: 25px; color: var(--muted);">Authorized Personnel Only</p>
       
       <form id="loginForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px;">
@@ -40,9 +43,12 @@
   <div id="appContent" style="display: none;">
     <header class="topbar">
       <div class="row space">
-        <div>
-          <h1>StringIQ</h1>
-          <p class="sub">Player profiles + setups</p>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img src="./icons/icon-192.png" width="42" height="42" style="border-radius: 10px; border: 1px solid var(--line);">
+          <div>
+            <h1 style="font-size: 24px; letter-spacing: -0.5px;">StringVault<span style="color: var(--accent);">.us</span></h1>
+            <p class="sub" style="margin-top: -2px;">Equipment & Performance Vault</p>
+          </div>
         </div>
         <button onclick="handleLogout()" class="btn" style="padding: 5px 12px; font-size: 12px; background: #ff4b4b; color: white; border:none;">Logout</button>
       </div>
@@ -126,6 +132,25 @@
           
           <div class="row">
             <label style="flex: 1;">
+              <span>Shoe Wear Status</span>
+              <select id="shoeWearStatus">
+                  <option value="fresh">🌟 Fresh (New)</option>
+                  <option value="average" selected>✅ Average Wear</option>
+                  <option value="smooth">⚠️ Smooth (Shiny/Bald)</option>
+              </select>
+            </label>
+            <label style="flex: 1;">
+              <span>Play Intensity</span>
+              <select id="playIntensity">
+                  <option value="1.0">Low (Relaxed)</option>
+                  <option value="2.5" selected>Moderate (2.5)</option>
+                  <option value="5.0">High (Competitive)</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <label style="flex: 1;">
                 <span>Setup Rating (0-100)</span>
                 <input id="setupRating" type="number" min="0" max="100" placeholder="85" />
             </label>
@@ -170,7 +195,7 @@
   </div> 
 
   <div id="iosPrompt" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; background:white; color:#333; padding:20px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; border: 2px solid #4b79ff;">
-    <h4 style="margin-bottom:10px;">Install on iPhone</h4>
+    <h4 style="margin-bottom:10px;">Install StringVault</h4>
     <p style="font-size:14px; margin-bottom:15px;">1. Tap the <strong>Share</strong> icon (square with arrow) at the bottom.<br>2. Scroll down and tap <strong>Add to Home Screen</strong>.</p>
     <button onclick="document.getElementById('iosPrompt').style.display='none'" class="btn primary" style="width:100%;">Got it!</button>
   </div>
