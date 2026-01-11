@@ -1,12 +1,65 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Offline</title>
+  <title>Offline | StringVault</title>
+  <style>
+    :root {
+      --bg: #111111;
+      --accent: #4b79ff;
+      --text: #ffffff;
+      --muted: #888888;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+    }
+    .icon-box {
+      width: 80px;
+      height: 80px;
+      background: #1a1a1a;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      border: 1px solid #333;
+    }
+    h1 { font-size: 24px; margin: 0 0 10px 0; }
+    p { color: var(--muted); margin-bottom: 25px; line-height: 1.5; }
+    .btn {
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      display: inline-block;
+    }
+  </style>
 </head>
 <body>
-  <h1>You’re offline</h1>
-  <p>Reconnect and refresh.</p>
+  <div class="container">
+    <div style="display: flex; justify-content: center;">
+      <div class="icon-box">
+        <img src="./icons/icon-192.png" width="50" height="50" style="opacity: 0.5;">
+      </div>
+    </div>
+    <h1>Connection Lost</h1>
+    <p>The StringVault requires an internet connection<br>to sync player profiles.</p>
+    <a href="javascript:window.location.reload();" class="btn">Try Again</a>
+  </div>
 </body>
 </html>
