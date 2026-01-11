@@ -1,4 +1,4 @@
-/* StringIQ — app.js (Final Integrated Version) */
+/* StringVault.us — app.js (Final Integrated Version) */
 
 // 1. YOUR FIREBASE CONFIG
 const firebaseConfig = {
@@ -111,7 +111,6 @@ function initDropdowns() {
         }
     }
 
-    // Pattern Dropdown Population
     const pattEl = $("pattern");
     if (pattEl) {
         const patterns = ["16x19", "18x20", "16x18", "16x20", "18x19", "14x18"];
@@ -161,11 +160,28 @@ function render() {
         const div = document.createElement("div");
         div.className = "item";
         const canEdit = (p.lastUpdatedBy === auth.currentUser.email.toLowerCase()) || (currentUserRole === "admin");
+        
+        // --- PERFORMANCE & SHOE LOGIC ---
+        const intensity = parseFloat(p.playIntensity) || 2.5;
+        const days = Math.floor((Date.now() - (p.shoePurchaseDate || Date.now())) / (1000*60*60*24)) || 30;
+        const wearScore = (days * intensity);
+
+        let wearStatus = "Fresh";
+        let wearColor = "#2ecc71"; // Green
+
+        if (p.shoeWearStatus === "smooth" || wearScore >= 150) {
+            wearStatus = "High Wear";
+            wearColor = "#ff4b4b"; // Red
+        } else if (p.shoeWearStatus === "average" || wearScore >= 50) {
+            wearStatus = "Average Wear";
+            wearColor = "#4b79ff"; // Blue (StringVault Brand)
+        }
+
         div.innerHTML = `
             <div class="title"><h3>${escapeHtml(p.name)} (${p.age || '?'})</h3></div>
             <div class="badges">
+                <span class="badge" style="border-color:${wearColor}; color:${wearColor};">Setup: ${wearStatus}</span>
                 <span class="badge">UTR: ${p.utr || 'N/A'}</span>
-                <span class="badge">${p.hand || 'R'}</span>
                 <span class="badge">${escapeHtml(p.racketModel)} [${p.pattern || '16x19'}]</span>
                 <span class="badge">${p.tensionMain}/${p.tensionCross} lbs</span>
                 ${p.usedBallMachine ? '<span class="badge" style="background:#4b79ff; color:white; border:none;">Ball Machine</span>' : ''}
@@ -195,6 +211,11 @@ function editPlayer(id) {
     $("tensionMain").value = p.tensionMain || "";
     $("tensionCross").value = p.tensionCross || "";
     $("setupRating").value = p.setupRating || "";
+    
+    // StringVault New Fields
+    if($("playIntensity")) $("playIntensity").value = p.playIntensity || "2.5";
+    if($("shoeWearStatus")) $("shoeWearStatus").value = p.shoeWearStatus || "average";
+    
     if($("weeklyFeeling")) $("weeklyFeeling").value = p.weeklyFeeling || 50;
     $("usedBallMachine").checked = p.usedBallMachine || false;
     $("notes").value = p.notes || "";
@@ -205,6 +226,11 @@ $("playerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = $("playerId").value || Math.random().toString(16).slice(2);
     const machineUsed = $("usedBallMachine").checked;
+    
+    // Math for Alert
+    const intensity = parseFloat($("playIntensity").value) || 2.5;
+    const shoeStatus = $("shoeWearStatus").value;
+    const wearScore = (30 * intensity); // Assume 30 day window baseline
 
     const data = {
         name: $("name").value.trim(),
@@ -218,6 +244,8 @@ $("playerForm").addEventListener("submit", async (e) => {
         tensionMain: $("tensionMain").value,
         tensionCross: $("tensionCross").value,
         setupRating: $("setupRating").value,
+        playIntensity: $("playIntensity").value,
+        shoeWearStatus: shoeStatus,
         weeklyFeeling: $("weeklyFeeling") ? $("weeklyFeeling").value : 50,
         usedBallMachine: machineUsed,
         notes: $("notes").value.trim(),
@@ -227,11 +255,16 @@ $("playerForm").addEventListener("submit", async (e) => {
 
     try {
         await db.collection("players").doc(id).set(data);
-        if (machineUsed) {
-            alert("Profile Saved! \n\n💡 According to our data, players have better weekly feeling when practicing with a ball machine. Ball machine recommended!");
-        } else {
-            alert("Profile Saved!");
+        
+        let performanceImpact = "";
+        if (shoeStatus === "smooth" || wearScore >= 150) {
+            performanceImpact = "\n\n🚨 Vault Alert: Your foundation is no longer level. Slanted base detected.";
+        } else if (shoeStatus === "average") {
+            performanceImpact = "\n\n✅ Vault Status: Setup is stable. Optimal broken-in phase.";
         }
+
+        alert("Profile Saved to StringVault.us!" + performanceImpact);
+        
         $("playerId").value = "";
         $("playerForm").reset();
     } catch (err) { alert("Error saving profile."); }
