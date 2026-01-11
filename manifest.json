@@ -1,10 +1,11 @@
 {
-  "name": "StringIQ",
-  "short_name": "StringIQ",
+  "name": "StringVault Equipment & Performance",
+  "short_name": "StringVault",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#111111",
+  "description": "Vault for tennis player profiles, racket setups, and shoe wear performance tracking.",
   "icons": [
     {
       "src": "./icons/icon-192.png",
