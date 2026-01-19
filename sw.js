@@ -1,6 +1,6 @@
-/* StringVault Service Worker — v1 */
+/* StringVault Service Worker — v2(updated photo/changed name) */
 
-const CACHE_NAME = "stringvault-v1";
+const CACHE_NAME = "stringvault-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -65,3 +65,4 @@ self.addEventListener("fetch", (event) => {
     }
   })());
 });
+
