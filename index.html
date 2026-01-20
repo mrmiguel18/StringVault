@@ -130,24 +130,25 @@
             <label style="flex: 1;">
               <span>Shoe Wear Status</span>
               <select id="shoeWearStatus" onchange="checkWearWarning()">
-                  <option value="fresh">🌟 Fresh (Deep Tread / Full Traction)</option>
-                  <option value="average" selected>✅ Average (Normal Use / Minor Rounding)</option>
-                  <option value="moderate">🟡 Moderate (Smooth Pivots / Traction Loss)</option>
-                  <option value="smooth">🚨 High Wear (Bald Outsole / Slanted Base)</option>
+                  <option value="fresh">🌟 Fresh (Full Traction)</option>
+                  <option value="average" selected>✅ Average (Normal Use)</option>
+                  <option value="moderate">🟡 Moderate (Traction Loss)</option>
+                  <option value="smooth">🚨 High Wear (Injury Risk)</option>
               </select>
             </label>
             <label style="flex: 1;">
-              <span>Ball Machine Use</span>
+              <span>Ball Machine / Week</span>
               <select id="ballMachineUsage">
-                  <option value="none">No Machine Practice</option>
-                  <option value="light">Light (Drills < 30 min)</option>
-                  <option value="heavy">Heavy (Repetitive Drills 1hr+)</option>
+                  <option value="none">No Machine</option>
+                  <option value="light">Light (1-2x / week)</option>
+                  <option value="heavy">Heavy (3x+ / week)</option>
               </select>
             </label>
           </div>
 
-          <div id="wearReference" style="margin-top:10px; padding:12px; border-radius:8px; background:rgba(75, 121, 255, 0.05); font-size:12px; border: 1px solid var(--line); display:none;"></div>
           
+
+          <div id="wearReference" style="margin-top:10px; padding:12px; border-radius:8px; background:rgba(75, 121, 255, 0.05); font-size:12px; border: 1px solid var(--line); display:none;"></div>
 
           <div class="row">
             <label style="flex: 1;">
@@ -164,21 +165,21 @@
             <label style="flex: 1;">
               <span>Play Intensity</span>
               <select id="playIntensity">
-                  <option value="1.0">Low (Relaxed)</option>
-                  <option value="2.5" selected>Moderate (Competitive)</option>
-                  <option value="5.0">High (Elite/Heavy Hitter)</option>
+                  <option value="1.0">Low (1-2x / week)</option>
+                  <option value="2.5" selected>Moderate (3-4x / week)</option>
+                  <option value="5.0">High (5x+ Elite/Heavy)</option>
               </select>
             </label>
             <label style="flex: 1;">
-                <span>Setup Rating (0-100)</span>
-                <input id="setupRating" type="number" min="0" max="100" placeholder="85" />
+              <span>Weekly Feeling (1-100)</span>
+              <input id="weeklyFeeling" type="number" min="1" max="100" placeholder="50" />
             </label>
           </div>
 
           <div class="row">
             <label style="flex: 1;">
-                <span>Weekly Feeling (1-100)</span>
-                <input id="weeklyFeeling" type="number" min="1" max="100" placeholder="50" />
+                <span>Setup Rating (0-100)</span>
+                <input id="setupRating" type="number" min="0" max="100" placeholder="85" />
             </label>
           </div>
 
@@ -199,6 +200,7 @@
               <option value="name">A-Z</option>
               <option value="newest">Recent</option>
               <option value="ratingHigh">Score (High)</option>
+              <option value="feelingHigh">Feeling (High)</option>
             </select>
           </div>
         </div>
