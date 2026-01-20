@@ -26,7 +26,7 @@ const GRIP_OPTIONS = [
     "Continental", 
     "Eastern", 
     "Semi-Eastern", 
-    "Semi", // Added distinct Semi option
+    "Semi", 
     "Semi-Western", 
     "Western", 
     "Full Western", 
@@ -112,7 +112,6 @@ function checkWearWarning() {
     const status = $("shoeWearStatus")?.value;
     const refBox = $("wearReference");
     if (refBox) {
-        // Show visual reference when Smooth/Bald is selected (Toe Drag or Slanted Base)
         refBox.style.display = (status === "smooth") ? "block" : "none";
     }
 }
@@ -183,15 +182,16 @@ function render() {
     const q = ($("search")?.value || "").toLowerCase().trim();
     const sortVal = $("sortBy")?.value || "name";
     
-    // Filter by name
     let filtered = allPlayers.filter(p => (p.name || "").toLowerCase().includes(q));
 
-    // Advanced Sorting
+    // Advanced Sorting including Setup Rating
     filtered.sort((a, b) => {
         if (sortVal === "name") return a.name.localeCompare(b.name);
         if (sortVal === "newest") return (b.updatedAt || 0) - (a.updatedAt || 0);
         if (sortVal === "feelHigh") return (Number(b.weeklyFeeling) || 0) - (Number(a.weeklyFeeling) || 0);
         if (sortVal === "feelLow") return (Number(a.weeklyFeeling) || 0) - (Number(b.weeklyFeeling) || 0);
+        if (sortVal === "ratingHigh") return (Number(b.setupRating) || 0) - (Number(a.setupRating) || 0);
+        if (sortVal === "ratingLow") return (Number(a.setupRating) || 0) - (Number(b.setupRating) || 0);
         if (sortVal === "grip") return (a.forehandGrip || "").localeCompare(b.forehandGrip || "");
         return 0;
     });
@@ -204,12 +204,10 @@ function render() {
         div.className = "item";
         const canEdit = (p.lastUpdatedBy === auth.currentUser.email.toLowerCase()) || (currentUserRole === "admin");
         
-        // Performance logic for badges
-        let wearStatus = "Fresh";
         let wearColor = "#2ecc71";
-
+        let wearStatus = "Fresh";
         if (p.shoeWearStatus === "smooth") {
-            wearStatus = "🚨 High Wear/Uneven";
+            wearStatus = "🚨 High Wear";
             wearColor = "#ff4b4b";
         } else if (p.shoeWearStatus === "average") {
             wearStatus = "Average";
@@ -220,6 +218,7 @@ function render() {
             <div class="title"><h3>${escapeHtml(p.name)}</h3></div>
             <div class="badges">
                 <span class="badge" style="border-color:${wearColor}; color:${wearColor};">${wearStatus}</span>
+                <span class="badge" style="background: #4b79ff; color: white; border: none;">Score: ${p.setupRating || 0}</span>
                 <span class="badge">Feel: ${p.weeklyFeeling || 50}</span>
                 <span class="badge">FH: ${p.forehandGrip || 'N/A'}</span>
                 <span class="badge">${escapeHtml(p.racketModel)}</span>
