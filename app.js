@@ -50,7 +50,7 @@ const STRING_DATA = {
     "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament", "Poly", "Hybrid"]
 };
 
-// --- AUTH ---
+// --- AUTH & INITIALIZATION ---
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         try {
@@ -61,10 +61,16 @@ auth.onAuthStateChanged(async (user) => {
                 doc = await db.collection("approved_users").doc(email).get();
             }
             currentUserRole = doc.data().role || "player";
+            
+            // Show App Content
             $("authScreen").style.display = "none";
             $("appContent").style.display = "block";
+            
+            // POPULATE ALL DROPDOWNS FIRST
+            initDropdowns(); 
+            // THEN INIT DATA
             initApp(); 
-        } catch (error) { auth.signOut(); }
+        } catch (error) { console.error("Auth error:", error); auth.signOut(); }
     } else {
         $("authScreen").style.display = "flex";
         $("appContent").style.display = "none";
@@ -85,9 +91,6 @@ function calculateTensionLoss() {
     result.style.color = isCritical ? "#ff4b4b" : "#2ecc71";
 }
 
-/**
- * Enhanced Shoe Wear Scale Logic
- */
 function checkWearWarning() {
     const status = $("shoeWearStatus")?.value;
     const refBox = $("wearReference");
@@ -95,33 +98,18 @@ function checkWearWarning() {
 
     let guidance = "";
     switch(status) {
-        case "fresh":
-            guidance = "🟢 <strong>Fresh:</strong> New condition. Maximum traction and lateral support.";
-            break;
-        case "average":
-            guidance = "🔵 <strong>Average:</strong> Typical wear. Some tread rounding but safe for match play.";
-            break;
-        case "moderate":
-            guidance = "🟡 <strong>Moderate:</strong> Notable smoothing. Traction loss on hard lunges. Monitor closely.";
-            break;
-        case "smooth":
-            guidance = "🔴 <strong>🚨 High Wear:</strong> Tread is gone or midsole is showing. High risk of slipping or rolled ankles.";
-            break;
+        case "fresh": guidance = "🟢 <strong>Fresh:</strong> New condition. Maximum traction."; break;
+        case "average": guidance = "🔵 <strong>Average:</strong> Typical wear. Safe for play."; break;
+        case "moderate": guidance = "🟡 <strong>Moderate:</strong> Notable smoothing. Monitor traction."; break;
+        case "smooth": guidance = "🔴 <strong>🚨 High Wear:</strong> Tread is gone. Replacement recommended."; break;
     }
     refBox.innerHTML = guidance;
     refBox.style.display = status ? "block" : "none";
 }
 
-// --- CORE APP ---
-function initApp() {
-    db.collection("players").onSnapshot((snapshot) => {
-        allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        render();
-    });
-    initDropdowns();
-}
-
+// --- UI POPULATION ---
 function initDropdowns() {
+    // Populate Rackets
     const rackEl = $("racketModel");
     if (rackEl) {
         rackEl.innerHTML = '<option value="">-- Select Racket --</option>';
@@ -134,7 +122,31 @@ function initDropdowns() {
             rackEl.appendChild(group);
         }
     }
-    // Populate Tensions 35-70
+
+    // Populate Strings
+    const populateStrings = (el) => {
+        if (!el) return;
+        el.innerHTML = '<option value="">-- Select String --</option>';
+        for (const [brand, models] of Object.entries(STRING_DATA)) {
+            const group = document.createElement("optgroup");
+            group.label = brand;
+            models.forEach(m => group.appendChild(new Option(`${brand} ${m}`, `${brand} ${m}`)));
+            el.appendChild(group);
+        }
+    };
+    populateStrings($("stringMain"));
+    populateStrings($("stringCross"));
+
+    // Populate Grips
+    const populateGrips = (el) => {
+        if (!el) return;
+        el.innerHTML = '<option value="">-- Select Grip --</option>';
+        GRIP_OPTIONS.forEach(g => el.appendChild(new Option(g, g)));
+    };
+    populateGrips($("forehandGrip"));
+    populateGrips($("backhandGrip"));
+
+    // Populate Tensions
     const tm = $("tensionMain"), tc = $("tensionCross");
     if (tm && tm.options.length <= 1) {
         for(let i=35; i<=70; i++) {
@@ -142,6 +154,14 @@ function initDropdowns() {
             tc.add(new Option(i + " lbs", i));
         }
     }
+}
+
+// --- CORE APP ---
+function initApp() {
+    db.collection("players").onSnapshot((snapshot) => {
+        allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        render();
+    });
 }
 
 function render() {
@@ -161,9 +181,8 @@ function render() {
             <div class="title"><h3>${escapeHtml(p.name)}</h3></div>
             <div class="badges">
                 <span class="badge" style="background:#4b79ff; color:white; border:none;">Score: ${p.setupRating || 0}</span>
-                <span class="badge">Feel: ${p.weeklyFeeling || 50}/100</span>
                 <span class="badge">${p.racketModel}</span>
-                ${p.usedBallMachine ? '<span class="badge" style="border-color:#ffd700; color:#ffd700;">🤖 Machine User</span>' : ''}
+                <span class="badge">${p.ballMachineUsage === 'none' ? 'No Machine' : '🤖 ' + p.ballMachineUsage}</span>
             </div>
             <div class="actions" style="margin-top:10px;">
                 ${canEdit ? `<button class="btn" onclick="editPlayer('${p.id}')">Edit Profile</button>` : ""}
@@ -181,7 +200,7 @@ function editPlayer(id) {
     $("racketModel").value = p.racketModel || "";
     $("setupRating").value = p.setupRating || "";
     $("shoeWearStatus").value = p.shoeWearStatus || "average";
-    $("usedBallMachine").checked = p.usedBallMachine || false;
+    $("ballMachineUsage").value = p.ballMachineUsage || "none";
     $("notes").value = p.notes || "";
     checkWearWarning();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -191,16 +210,18 @@ $("playerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = $("playerId").value || Math.random().toString(16).slice(2);
     const shoeStatus = $("shoeWearStatus").value;
-    const isMachine = $("usedBallMachine").checked;
+    const ballUsage = $("ballMachineUsage").value;
 
     const data = {
         name: $("name").value.trim(),
         racketModel: $("racketModel").value,
-        tensionMain: $("tensionMain").value,
-        tensionCross: $("tensionCross").value,
+        stringMain: $("stringMain")?.value || "",
+        stringCross: $("stringCross")?.value || "",
+        tensionMain: $("tensionMain")?.value || "",
+        tensionCross: $("tensionCross")?.value || "",
         setupRating: $("setupRating").value,
         shoeWearStatus: shoeStatus,
-        usedBallMachine: isMachine,
+        ballMachineUsage: ballUsage,
         notes: $("notes").value.trim(),
         updatedAt: Date.now(),
         lastUpdatedBy: auth.currentUser.email.toLowerCase()
@@ -210,8 +231,8 @@ $("playerForm").addEventListener("submit", async (e) => {
         await db.collection("players").doc(id).set(data, { merge: true });
         
         let alertMsg = "Profile Saved!";
-        if (shoeStatus === "smooth") alertMsg += "\n\n⚠️ CRITICAL: Replace shoes immediately to prevent injury.";
-        if (isMachine) alertMsg += "\n\n🤖 NOTE: High repetition machine use will accelerate tension loss.";
+        if (shoeStatus === "smooth") alertMsg += "\n\n⚠️ CRITICAL: Replace shoes to prevent injury.";
+        if (ballUsage === "heavy") alertMsg += "\n\n🤖 NOTE: Heavy machine use will accelerate tension loss.";
 
         alert(alertMsg);
         $("playerForm").reset();
