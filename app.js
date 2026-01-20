@@ -184,7 +184,7 @@ function render() {
     
     let filtered = allPlayers.filter(p => (p.name || "").toLowerCase().includes(q));
 
-    // Advanced Sorting including Setup Rating
+    // Advanced Sorting (including Setup Rating)
     filtered.sort((a, b) => {
         if (sortVal === "name") return a.name.localeCompare(b.name);
         if (sortVal === "newest") return (b.updatedAt || 0) - (a.updatedAt || 0);
