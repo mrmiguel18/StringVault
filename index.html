@@ -124,34 +124,45 @@
           </div>
 
           <hr style="border: 0; border-top: 1px solid var(--line); margin: 20px 0;" />
-          <h3 style="font-size: 14px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Physicals & Grip</h3>
-
-          <div class="row">
-            <label style="flex: 1;"><span>Forehand Grip</span><select id="forehandGrip"></select></label>
-            <label style="flex: 1;"><span>Backhand Grip</span><select id="backhandGrip"></select></label>
-          </div>
+          <h3 style="font-size: 14px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Physicals & Equipment Status</h3>
 
           <div class="row">
             <label style="flex: 1;">
               <span>Shoe Wear Status</span>
               <select id="shoeWearStatus" onchange="checkWearWarning()">
-                  <option value="fresh">🌟 Fresh (New condition)</option>
-                  <option value="average">✅ Average (Typical wear)</option>
-                  <option value="moderate">🟡 Moderate (Smooth spots appearing)</option>
-                  <option value="smooth">🚨 High Wear (Bald/Slanted)</option>
+                  <option value="fresh">🌟 Fresh (Deep Tread / Full Traction)</option>
+                  <option value="average" selected>✅ Average (Normal Use / Minor Rounding)</option>
+                  <option value="moderate">🟡 Moderate (Smooth Pivots / Traction Loss)</option>
+                  <option value="smooth">🚨 High Wear (Bald Outsole / Slanted Base)</option>
               </select>
             </label>
             <label style="flex: 1;">
-              <span>Play Intensity</span>
-              <select id="playIntensity">
-                  <option value="1.0">Low (Social)</option>
-                  <option value="2.5" selected>Moderate (Standard)</option>
-                  <option value="5.0">High (Tournament/Pro)</option>
+              <span>Ball Machine Use</span>
+              <select id="ballMachineUsage">
+                  <option value="none">No Machine Practice</option>
+                  <option value="light">Light (Drills < 30 min)</option>
+                  <option value="heavy">Heavy (Repetitive Drills 1hr+)</option>
               </select>
             </label>
           </div>
 
-          <div id="wearReference" style="margin-top:10px; padding:12px; border-radius:8px; background:rgba(75, 121, 255, 0.1); font-size:12px; color: var(--text); border: 1px solid var(--line); display:none;"></div>
+          <div id="wearReference" style="margin-top:10px; padding:12px; border-radius:8px; background:rgba(75, 121, 255, 0.05); font-size:12px; border: 1px solid var(--line); display:none;"></div>
+          
+
+          <div class="row">
+            <label style="flex: 1;">
+              <span>Forehand Grip</span>
+              <select id="forehandGrip"></select>
+            </label>
+            <label style="flex: 1;">
+              <span>Play Intensity</span>
+              <select id="playIntensity">
+                  <option value="1.0">Low (Relaxed)</option>
+                  <option value="2.5" selected>Moderate (Competitive)</option>
+                  <option value="5.0">High (Elite/Heavy Hitter)</option>
+              </select>
+            </label>
+          </div>
 
           <div class="row">
             <label style="flex: 1;">
@@ -164,18 +175,10 @@
             </label>
           </div>
 
-          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 15px 0; background: #f0f4ff; padding: 12px; border-radius: 8px; border: 1px dashed #4b79ff;">
-            <input type="checkbox" id="usedBallMachine" style="width: 22px; height: 22px; margin: 0; cursor: pointer;">
-            <span style="font-size: 11px; font-weight: bold; color: #4b79ff; line-height: 1.3;">
-              Did you practice with a ball machine prior to inputting weekly feeling score? 
-              <br><small style="font-weight: normal; color: #666;">(High repetition affects rating accuracy)</small>
-            </span>
-          </label>
-
-          <label><span>Notes</span><textarea id="notes" rows="3" placeholder="Performance details, injuries, or surface changes..."></textarea></label>
+          <label><span>Notes</span><textarea id="notes" rows="3" placeholder="Notes on performance, string feel, or footwork..."></textarea></label>
 
           <div class="row" style="margin-top: 20px;">
-            <button type="submit" class="btn primary" style="flex: 2;">Save to Vault</button>
+            <button type="submit" class="btn primary" style="flex: 2;">Save Profile to Vault</button>
           </div>
         </form>
       </section>
@@ -184,24 +187,23 @@
         <div class="row space" style="flex-wrap: wrap; gap: 10px;">
           <h2>Vault Records</h2>
           <div class="row" style="margin-top: 0; flex: 1; justify-content: flex-end; gap: 5px;">
-            <input id="search" placeholder="Search name..." oninput="render()" style="width: 120px; margin-top:0; padding: 8px;" />
+            <input id="search" placeholder="Search..." oninput="render()" style="width: 120px; margin-top:0; padding: 8px;" />
             <select id="sortBy" onchange="render()" style="width: 110px; margin-top:0; padding: 8px; font-size: 12px;">
               <option value="name">A-Z</option>
               <option value="newest">Recent</option>
-              <option value="ratingHigh">Score High</option>
-              <option value="ratingLow">Score Low</option>
+              <option value="ratingHigh">Score (High)</option>
             </select>
           </div>
         </div>
         <div id="playerList" class="list"></div>
-        <p id="empty" class="empty">No records found in the vault.</p>
+        <p id="empty" class="empty">Vault empty.</p>
       </section>
     </main>
   </div> 
 
   <div id="iosPrompt" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; background:white; color:#333; padding:20px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; border: 2px solid #4b79ff;">
     <h4 style="margin-bottom:10px;">Install StringVault</h4>
-    <p style="font-size:14px; margin-bottom:15px;">1. Tap the <strong>Share</strong> icon at the bottom.<br>2. Tap <strong>Add to Home Screen</strong>.</p>
+    <p style="font-size:14px; margin-bottom:15px;">1. Tap the <strong>Share</strong> icon.<br>2. Tap <strong>Add to Home Screen</strong>.</p>
     <button onclick="document.getElementById('iosPrompt').style.display='none'" class="btn primary" style="width:100%;">Got it!</button>
   </div>
 
@@ -213,18 +215,8 @@
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("./sw.js")
-        .then(() => console.log("StringVault SW Registered"))
-        .catch(err => console.log("SW Registration Failed", err));
-    }
-    
-    const isIos = () => {
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      return /iphone|ipad|ipod/.test(userAgent);
-    }
-    const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
-
-    if (isIos() && !isInStandaloneMode()) {
-      document.getElementById('iosPrompt').style.display = 'block';
+        .then(() => console.log("SW Active"))
+        .catch(err => console.log("SW Failed", err));
     }
   </script>
 </body>
