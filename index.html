@@ -114,8 +114,8 @@
           </div>
 
           <div class="row">
-            <label style="flex: 1;"><span>Main String</span><select id="stringMain" required></select></label>
-            <label style="flex: 1;"><span>Cross String</span><select id="stringCross" required></select></label>
+            <label style="flex: 1;"><span>Main String</span><select id="stringMain"></select></label>
+            <label style="flex: 1;"><span>Cross String</span><select id="stringCross"></select></label>
           </div>
 
           <div class="row">
@@ -155,6 +155,13 @@
               <select id="forehandGrip"></select>
             </label>
             <label style="flex: 1;">
+              <span>Backhand Grip</span>
+              <select id="backhandGrip"></select>
+            </label>
+          </div>
+
+          <div class="row">
+            <label style="flex: 1;">
               <span>Play Intensity</span>
               <select id="playIntensity">
                   <option value="1.0">Low (Relaxed)</option>
@@ -162,13 +169,13 @@
                   <option value="5.0">High (Elite/Heavy Hitter)</option>
               </select>
             </label>
-          </div>
-
-          <div class="row">
             <label style="flex: 1;">
                 <span>Setup Rating (0-100)</span>
                 <input id="setupRating" type="number" min="0" max="100" placeholder="85" />
             </label>
+          </div>
+
+          <div class="row">
             <label style="flex: 1;">
                 <span>Weekly Feeling (1-100)</span>
                 <input id="weeklyFeeling" type="number" min="1" max="100" placeholder="50" />
