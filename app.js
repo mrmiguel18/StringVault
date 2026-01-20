@@ -22,17 +22,7 @@ let currentUserRole = "player";
 let allPlayers = [];
 
 // --- DATASETS ---
-const GRIP_OPTIONS = [
-    "Continental", 
-    "Eastern", 
-    "Semi-Eastern", 
-    "Semi", 
-    "Semi-Western", 
-    "Western", 
-    "Full Western", 
-    "Hawaiian", 
-    "Double Handed"
-];
+const GRIP_OPTIONS = ["Continental", "Eastern", "Semi-Eastern", "Semi", "Semi-Western", "Western", "Full Western", "Hawaiian", "Double Handed"];
 
 const RACKET_DATA = {
     "Yonex": {
@@ -50,10 +40,6 @@ const RACKET_DATA = {
         "Pure Drive": ["Pure Drive", "Pure Drive 98", "Pure Drive Tour", "Pure Drive Team", "Pure Drive Lite", "Pure Drive Plus", "Pure Drive VS", "Pure Drive Wimbledon"],
         "Pure Aero": ["Pure Aero", "Pure Aero 98", "Pure Aero Tour", "Pure Aero Team", "Pure Aero Lite", "Pure Aero Plus", "Pure Aero Rafa", "Pure Aero Rafa Origin"],
         "Pure Strike": ["Pure Strike 98 (16x19)", "Pure Strike 98 (18x20)", "Pure Strike 100", "Pure Strike Tour", "Pure Strike Team", "Pure Strike Lite"]
-    },
-    "Solinco": {
-        "Whiteout": ["Whiteout 305 (16x19)", "Whiteout 305 (18x20)", "Whiteout 290", "Whiteout XTD"],
-        "Blackout": ["Blackout 300", "Blackout 300 XTD", "Blackout 285", "Blackout Team"]
     }
 };
 
@@ -61,13 +47,10 @@ const STRING_DATA = {
     "Luxilon": ["ALU Power", "ALU Power Soft", "4G", "4G Soft", "Element", "Big Banger Original"],
     "Solinco": ["Hyper-G", "Hyper-G Soft", "Tour Bite", "Tour Bite Soft", "Confidential", "Outlast"],
     "Babolat": ["RPM Blast", "RPM Rough", "RPM Team", "VS Touch (Natural Gut)"],
-    "Yonex": ["Poly Tour Pro", "Poly Tour Rev", "Poly Tour Fire", "Poly Tour Drive"],
-    "Head": ["Lynx Tour", "Hawk Touch", "Lynx", "Sonic Pro", "RIP Control"],
-    "Wilson": ["NXT", "NXT Tour", "Sensation", "Natural Gut"],
-    "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament", "Poly", "Kevlar", "Hybrid"]
+    "Generic": ["Natural Gut", "Synthetic Gut", "Multifilament", "Poly", "Hybrid"]
 };
 
-// --- AUTH & INITIALIZATION ---
+// --- AUTH ---
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         try {
@@ -78,11 +61,10 @@ auth.onAuthStateChanged(async (user) => {
                 doc = await db.collection("approved_users").doc(email).get();
             }
             currentUserRole = doc.data().role || "player";
-            if ($("adminLink")) $("adminLink").style.display = (currentUserRole === "admin") ? "block" : "none";
             $("authScreen").style.display = "none";
             $("appContent").style.display = "block";
             initApp(); 
-        } catch (error) { console.error("Auth error:", error); auth.signOut(); }
+        } catch (error) { auth.signOut(); }
     } else {
         $("authScreen").style.display = "flex";
         $("appContent").style.display = "none";
@@ -93,30 +75,52 @@ auth.onAuthStateChanged(async (user) => {
 function calculateTensionLoss() {
     const dateInput = $("stringingDate").value;
     if (!dateInput) return;
-    const start = new Date(dateInput);
-    const today = new Date();
-    const days = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+    const days = Math.floor((new Date() - new Date(dateInput)) / (1000 * 60 * 60 * 24));
     let lossPercent = (days >= 1) ? 10 + (days * 0.8) : 0;
     if (days > 45) lossPercent = 40; 
     const result = $("tensionResult");
     const isCritical = lossPercent > 22;
-    result.innerHTML = days < 0 ? "Invalid Date" : 
-        `Loss: <strong>${lossPercent.toFixed(1)}%</strong><br><small>${days} days old</small><br>
-         <div style="margin-top:5px; font-size:11px; font-weight:bold;">
-            ${isCritical ? "⚠️ RESTRING RECOMMENDED" : "✅ TENSION STABLE"}
-         </div>`;
+    result.innerHTML = `Loss: <strong>${lossPercent.toFixed(1)}%</strong><br><small>${days} days old</small><br>
+                        ${isCritical ? "⚠️ RESTRING RECOMMENDED" : "✅ TENSION STABLE"}`;
     result.style.color = isCritical ? "#ff4b4b" : "#2ecc71";
 }
 
+/**
+ * Enhanced Shoe Wear Scale Logic
+ */
 function checkWearWarning() {
     const status = $("shoeWearStatus")?.value;
     const refBox = $("wearReference");
-    if (refBox) {
-        refBox.style.display = (status === "smooth") ? "block" : "none";
+    if (!refBox) return;
+
+    let guidance = "";
+    switch(status) {
+        case "fresh":
+            guidance = "🟢 <strong>Fresh:</strong> New condition. Maximum traction and lateral support.";
+            break;
+        case "average":
+            guidance = "🔵 <strong>Average:</strong> Typical wear. Some tread rounding but safe for match play.";
+            break;
+        case "moderate":
+            guidance = "🟡 <strong>Moderate:</strong> Notable smoothing. Traction loss on hard lunges. Monitor closely.";
+            break;
+        case "smooth":
+            guidance = "🔴 <strong>🚨 High Wear:</strong> Tread is gone or midsole is showing. High risk of slipping or rolled ankles.";
+            break;
     }
+    refBox.innerHTML = guidance;
+    refBox.style.display = status ? "block" : "none";
 }
 
-// --- UI POPULATION ---
+// --- CORE APP ---
+function initApp() {
+    db.collection("players").onSnapshot((snapshot) => {
+        allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        render();
+    });
+    initDropdowns();
+}
+
 function initDropdowns() {
     const rackEl = $("racketModel");
     if (rackEl) {
@@ -130,35 +134,7 @@ function initDropdowns() {
             rackEl.appendChild(group);
         }
     }
-
-    const pattEl = $("pattern");
-    if (pattEl) {
-        const patterns = ["16x19", "18x20", "16x18", "16x20", "18x19", "14x18"];
-        pattEl.innerHTML = "";
-        patterns.forEach(p => pattEl.add(new Option(p, p)));
-    }
-
-    const populateGrips = (el) => {
-        if (!el) return;
-        el.innerHTML = '<option value="">-- Select Grip --</option>';
-        GRIP_OPTIONS.forEach(g => el.appendChild(new Option(g, g)));
-    };
-    populateGrips($("forehandGrip"));
-    populateGrips($("backhandGrip"));
-
-    const populateStrings = (el) => {
-        if (!el) return;
-        el.innerHTML = '<option value="">-- Select String --</option>';
-        for (const [brand, models] of Object.entries(STRING_DATA)) {
-            const group = document.createElement("optgroup");
-            group.label = brand;
-            models.forEach(m => group.appendChild(new Option(`${brand} ${m}`, `${brand} ${m}`)));
-            el.appendChild(group);
-        }
-    };
-    populateStrings($("stringMain"));
-    populateStrings($("stringCross"));
-
+    // Populate Tensions 35-70
     const tm = $("tensionMain"), tc = $("tensionCross");
     if (tm && tm.options.length <= 1) {
         for(let i=35; i<=70; i++) {
@@ -168,33 +144,10 @@ function initDropdowns() {
     }
 }
 
-// --- CORE APP LOGIC ---
-function initApp() {
-    db.collection("players").onSnapshot((snapshot) => {
-        allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        render();
-    });
-    initDropdowns();
-}
-
 function render() {
     const list = $("playerList");
     const q = ($("search")?.value || "").toLowerCase().trim();
-    const sortVal = $("sortBy")?.value || "name";
-    
     let filtered = allPlayers.filter(p => (p.name || "").toLowerCase().includes(q));
-
-    // Advanced Sorting (including Setup Rating)
-    filtered.sort((a, b) => {
-        if (sortVal === "name") return a.name.localeCompare(b.name);
-        if (sortVal === "newest") return (b.updatedAt || 0) - (a.updatedAt || 0);
-        if (sortVal === "feelHigh") return (Number(b.weeklyFeeling) || 0) - (Number(a.weeklyFeeling) || 0);
-        if (sortVal === "feelLow") return (Number(a.weeklyFeeling) || 0) - (Number(b.weeklyFeeling) || 0);
-        if (sortVal === "ratingHigh") return (Number(b.setupRating) || 0) - (Number(a.setupRating) || 0);
-        if (sortVal === "ratingLow") return (Number(a.setupRating) || 0) - (Number(b.setupRating) || 0);
-        if (sortVal === "grip") return (a.forehandGrip || "").localeCompare(b.forehandGrip || "");
-        return 0;
-    });
 
     list.innerHTML = "";
     $("empty").style.display = filtered.length ? "none" : "block";
@@ -204,60 +157,32 @@ function render() {
         div.className = "item";
         const canEdit = (p.lastUpdatedBy === auth.currentUser.email.toLowerCase()) || (currentUserRole === "admin");
         
-        let wearColor = "#2ecc71";
-        let wearStatus = "Fresh";
-        if (p.shoeWearStatus === "smooth") {
-            wearStatus = "🚨 High Wear";
-            wearColor = "#ff4b4b";
-        } else if (p.shoeWearStatus === "average") {
-            wearStatus = "Average";
-            wearColor = "#4b79ff";
-        }
-
         div.innerHTML = `
             <div class="title"><h3>${escapeHtml(p.name)}</h3></div>
             <div class="badges">
-                <span class="badge" style="border-color:${wearColor}; color:${wearColor};">${wearStatus}</span>
-                <span class="badge" style="background: #4b79ff; color: white; border: none;">Score: ${p.setupRating || 0}</span>
-                <span class="badge">Feel: ${p.weeklyFeeling || 50}</span>
-                <span class="badge">FH: ${p.forehandGrip || 'N/A'}</span>
-                <span class="badge">${escapeHtml(p.racketModel)}</span>
-                <span class="badge">${p.tensionMain}/${p.tensionCross} lbs</span>
+                <span class="badge" style="background:#4b79ff; color:white; border:none;">Score: ${p.setupRating || 0}</span>
+                <span class="badge">Feel: ${p.weeklyFeeling || 50}/100</span>
+                <span class="badge">${p.racketModel}</span>
+                ${p.usedBallMachine ? '<span class="badge" style="border-color:#ffd700; color:#ffd700;">🤖 Machine User</span>' : ''}
             </div>
             <div class="actions" style="margin-top:10px;">
-                ${canEdit ? `<button class="btn" onclick="editPlayer('${p.id}')">Edit</button>` : ""}
+                ${canEdit ? `<button class="btn" onclick="editPlayer('${p.id}')">Edit Profile</button>` : ""}
             </div>
         `;
         list.appendChild(div);
     });
 }
 
-// --- EDIT & SUBMIT LOGIC ---
 function editPlayer(id) {
     const p = allPlayers.find(x => x.id === id);
     if (!p) return;
     $("playerId").value = p.id;
     $("name").value = p.name || "";
-    $("age").value = p.age || "";
-    $("utr").value = p.utr || "";
-    $("hand").value = p.hand || "Right";
     $("racketModel").value = p.racketModel || "";
-    $("pattern").value = p.pattern || "16x19";
-    $("stringMain").value = p.stringMain || "";
-    $("stringCross").value = p.stringCross || "";
-    $("tensionMain").value = p.tensionMain || "";
-    $("tensionCross").value = p.tensionCross || "";
     $("setupRating").value = p.setupRating || "";
-    $("forehandGrip").value = p.forehandGrip || "";
-    $("backhandGrip").value = p.backhandGrip || "";
-    
-    if($("playIntensity")) $("playIntensity").value = p.playIntensity || "2.5";
-    if($("shoeWearStatus")) $("shoeWearStatus").value = p.shoeWearStatus || "average";
-    if($("weeklyFeeling")) $("weeklyFeeling").value = p.weeklyFeeling || 50;
-    
+    $("shoeWearStatus").value = p.shoeWearStatus || "average";
     $("usedBallMachine").checked = p.usedBallMachine || false;
     $("notes").value = p.notes || "";
-    
     checkWearWarning();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -265,46 +190,30 @@ function editPlayer(id) {
 $("playerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = $("playerId").value || Math.random().toString(16).slice(2);
-    
-    const fhGrip = $("forehandGrip").value;
     const shoeStatus = $("shoeWearStatus").value;
+    const isMachine = $("usedBallMachine").checked;
 
     const data = {
         name: $("name").value.trim(),
-        age: $("age").value,
-        utr: $("utr").value,
-        hand: $("hand").value,
         racketModel: $("racketModel").value,
-        pattern: $("pattern").value,
-        stringMain: $("stringMain").value,
-        stringCross: $("stringCross").value,
         tensionMain: $("tensionMain").value,
         tensionCross: $("tensionCross").value,
         setupRating: $("setupRating").value,
-        forehandGrip: fhGrip,
-        backhandGrip: $("backhandGrip").value,
-        playIntensity: $("playIntensity").value,
         shoeWearStatus: shoeStatus,
-        weeklyFeeling: $("weeklyFeeling") ? $("weeklyFeeling").value : 50,
-        usedBallMachine: $("usedBallMachine").checked,
+        usedBallMachine: isMachine,
         notes: $("notes").value.trim(),
         updatedAt: Date.now(),
         lastUpdatedBy: auth.currentUser.email.toLowerCase()
     };
 
     try {
-        await db.collection("players").doc(id).set(data);
+        await db.collection("players").doc(id).set(data, { merge: true });
         
-        let alertMsg = "Profile Saved to StringVault.us!";
-        if (shoeStatus === "smooth") {
-            alertMsg += "\n\n🚨 WARNING: Uneven sole detected (Toe Drag/Slanted Base). Foundation is compromised.";
-        }
-        if (fhGrip === "Hawaiian" || fhGrip === "Full Western") {
-            alertMsg += "\n⚠️ NOTE: Extreme grip will cause high friction; monitor string notching.";
-        }
+        let alertMsg = "Profile Saved!";
+        if (shoeStatus === "smooth") alertMsg += "\n\n⚠️ CRITICAL: Replace shoes immediately to prevent injury.";
+        if (isMachine) alertMsg += "\n\n🤖 NOTE: High repetition machine use will accelerate tension loss.";
 
         alert(alertMsg);
-        $("playerId").value = "";
         $("playerForm").reset();
         checkWearWarning();
     } catch (err) { alert("Error saving profile."); }
