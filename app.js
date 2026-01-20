@@ -62,13 +62,10 @@ auth.onAuthStateChanged(async (user) => {
             }
             currentUserRole = doc.data().role || "player";
             
-            // Show App Content
             $("authScreen").style.display = "none";
             $("appContent").style.display = "block";
             
-            // POPULATE ALL DROPDOWNS FIRST
             initDropdowns(); 
-            // THEN INIT DATA
             initApp(); 
         } catch (error) { console.error("Auth error:", error); auth.signOut(); }
     } else {
@@ -101,11 +98,13 @@ function checkWearWarning() {
         case "fresh": guidance = "🟢 <strong>Fresh:</strong> New condition. Maximum traction."; break;
         case "average": guidance = "🔵 <strong>Average:</strong> Typical wear. Safe for play."; break;
         case "moderate": guidance = "🟡 <strong>Moderate:</strong> Notable smoothing. Monitor traction."; break;
-        case "smooth": guidance = "🔴 <strong>🚨 High Wear:</strong> Tread is gone. Replacement recommended."; break;
+        case "smooth": guidance = "🔴 <strong>🚨 High Wear:</strong> Tread is gone. Slanted wear/injury risk."; break;
     }
     refBox.innerHTML = guidance;
     refBox.style.display = status ? "block" : "none";
 }
+
+
 
 // --- UI POPULATION ---
 function initDropdowns() {
@@ -123,6 +122,14 @@ function initDropdowns() {
         }
     }
 
+    // Populate Patterns
+    const patEl = $("pattern");
+    if (patEl) {
+        const patterns = ["16x19", "18x20", "16x18", "16x20", "18x19"];
+        patEl.innerHTML = '<option value="">-- Select Pattern --</option>';
+        patterns.forEach(p => patEl.add(new Option(p, p)));
+    }
+
     // Populate Strings
     const populateStrings = (el) => {
         if (!el) return;
@@ -137,6 +144,8 @@ function initDropdowns() {
     populateStrings($("stringMain"));
     populateStrings($("stringCross"));
 
+    
+
     // Populate Grips
     const populateGrips = (el) => {
         if (!el) return;
@@ -145,6 +154,8 @@ function initDropdowns() {
     };
     populateGrips($("forehandGrip"));
     populateGrips($("backhandGrip"));
+
+    
 
     // Populate Tensions
     const tm = $("tensionMain"), tc = $("tensionCross");
@@ -182,7 +193,7 @@ function render() {
             <div class="badges">
                 <span class="badge" style="background:#4b79ff; color:white; border:none;">Score: ${p.setupRating || 0}</span>
                 <span class="badge">${p.racketModel}</span>
-                <span class="badge">${p.ballMachineUsage === 'none' ? 'No Machine' : '🤖 ' + p.ballMachineUsage}</span>
+                <span class="badge">${p.ballMachineUsage === 'none' ? 'No Machine' : '🤖 Machine User'}</span>
             </div>
             <div class="actions" style="margin-top:10px;">
                 ${canEdit ? `<button class="btn" onclick="editPlayer('${p.id}')">Edit Profile</button>` : ""}
@@ -198,6 +209,13 @@ function editPlayer(id) {
     $("playerId").value = p.id;
     $("name").value = p.name || "";
     $("racketModel").value = p.racketModel || "";
+    $("pattern").value = p.pattern || "";
+    $("stringMain").value = p.stringMain || "";
+    $("stringCross").value = p.stringCross || "";
+    $("tensionMain").value = p.tensionMain || "";
+    $("tensionCross").value = p.tensionCross || "";
+    $("forehandGrip").value = p.forehandGrip || "";
+    $("backhandGrip").value = p.backhandGrip || "";
     $("setupRating").value = p.setupRating || "";
     $("shoeWearStatus").value = p.shoeWearStatus || "average";
     $("ballMachineUsage").value = p.ballMachineUsage || "none";
@@ -209,19 +227,20 @@ function editPlayer(id) {
 $("playerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = $("playerId").value || Math.random().toString(16).slice(2);
-    const shoeStatus = $("shoeWearStatus").value;
-    const ballUsage = $("ballMachineUsage").value;
-
+    
     const data = {
         name: $("name").value.trim(),
         racketModel: $("racketModel").value,
+        pattern: $("pattern").value,
         stringMain: $("stringMain")?.value || "",
         stringCross: $("stringCross")?.value || "",
         tensionMain: $("tensionMain")?.value || "",
         tensionCross: $("tensionCross")?.value || "",
+        forehandGrip: $("forehandGrip")?.value || "",
+        backhandGrip: $("backhandGrip")?.value || "",
         setupRating: $("setupRating").value,
-        shoeWearStatus: shoeStatus,
-        ballMachineUsage: ballUsage,
+        shoeWearStatus: $("shoeWearStatus").value,
+        ballMachineUsage: $("ballMachineUsage").value,
         notes: $("notes").value.trim(),
         updatedAt: Date.now(),
         lastUpdatedBy: auth.currentUser.email.toLowerCase()
@@ -229,12 +248,7 @@ $("playerForm").addEventListener("submit", async (e) => {
 
     try {
         await db.collection("players").doc(id).set(data, { merge: true });
-        
-        let alertMsg = "Profile Saved!";
-        if (shoeStatus === "smooth") alertMsg += "\n\n⚠️ CRITICAL: Replace shoes to prevent injury.";
-        if (ballUsage === "heavy") alertMsg += "\n\n🤖 NOTE: Heavy machine use will accelerate tension loss.";
-
-        alert(alertMsg);
+        alert("Profile Vaulted!");
         $("playerForm").reset();
         checkWearWarning();
     } catch (err) { alert("Error saving profile."); }
