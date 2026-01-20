@@ -203,6 +203,8 @@
             <select id="sortBy" onchange="render()" style="width: 110px; margin-top:0; padding: 8px; font-size: 12px;">
               <option value="name">A-Z</option>
               <option value="newest">Recent</option>
+              <option value="ratingHigh">Rating (High)</option>
+              <option value="ratingLow">Rating (Low)</option>
               <option value="feelHigh">Feel (High)</option>
               <option value="feelLow">Feel (Low)</option>
               <option value="grip">Grip Type</option>
@@ -233,7 +235,6 @@
         .catch(err => console.log("SW Registration Failed", err));
     }
     
-    // Simple iOS PWA detection
     const isIos = () => {
       const userAgent = window.navigator.userAgent.toLowerCase();
       return /iphone|ipad|ipod/.test(userAgent);
