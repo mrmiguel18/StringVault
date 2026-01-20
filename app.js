@@ -22,6 +22,18 @@ let currentUserRole = "player";
 let allPlayers = [];
 
 // --- DATASETS ---
+const GRIP_OPTIONS = [
+    "Continental", 
+    "Eastern", 
+    "Semi-Eastern", 
+    "Semi", // Added distinct Semi option
+    "Semi-Western", 
+    "Western", 
+    "Full Western", 
+    "Hawaiian", 
+    "Double Handed"
+];
+
 const RACKET_DATA = {
     "Yonex": {
         "EZONE": ["EZONE 98", "EZONE 98 Tour", "EZONE 100", "EZONE 100L", "EZONE 100+", "EZONE 105", "EZONE Ace", "EZONE Game"],
@@ -96,6 +108,15 @@ function calculateTensionLoss() {
     result.style.color = isCritical ? "#ff4b4b" : "#2ecc71";
 }
 
+function checkWearWarning() {
+    const status = $("shoeWearStatus")?.value;
+    const refBox = $("wearReference");
+    if (refBox) {
+        // Show visual reference when Smooth/Bald is selected (Toe Drag or Slanted Base)
+        refBox.style.display = (status === "smooth") ? "block" : "none";
+    }
+}
+
 // --- UI POPULATION ---
 function initDropdowns() {
     const rackEl = $("racketModel");
@@ -117,6 +138,14 @@ function initDropdowns() {
         pattEl.innerHTML = "";
         patterns.forEach(p => pattEl.add(new Option(p, p)));
     }
+
+    const populateGrips = (el) => {
+        if (!el) return;
+        el.innerHTML = '<option value="">-- Select Grip --</option>';
+        GRIP_OPTIONS.forEach(g => el.appendChild(new Option(g, g)));
+    };
+    populateGrips($("forehandGrip"));
+    populateGrips($("backhandGrip"));
 
     const populateStrings = (el) => {
         if (!el) return;
@@ -152,7 +181,21 @@ function initApp() {
 function render() {
     const list = $("playerList");
     const q = ($("search")?.value || "").toLowerCase().trim();
+    const sortVal = $("sortBy")?.value || "name";
+    
+    // Filter by name
     let filtered = allPlayers.filter(p => (p.name || "").toLowerCase().includes(q));
+
+    // Advanced Sorting
+    filtered.sort((a, b) => {
+        if (sortVal === "name") return a.name.localeCompare(b.name);
+        if (sortVal === "newest") return (b.updatedAt || 0) - (a.updatedAt || 0);
+        if (sortVal === "feelHigh") return (Number(b.weeklyFeeling) || 0) - (Number(a.weeklyFeeling) || 0);
+        if (sortVal === "feelLow") return (Number(a.weeklyFeeling) || 0) - (Number(b.weeklyFeeling) || 0);
+        if (sortVal === "grip") return (a.forehandGrip || "").localeCompare(b.forehandGrip || "");
+        return 0;
+    });
+
     list.innerHTML = "";
     $("empty").style.display = filtered.length ? "none" : "block";
 
@@ -161,31 +204,26 @@ function render() {
         div.className = "item";
         const canEdit = (p.lastUpdatedBy === auth.currentUser.email.toLowerCase()) || (currentUserRole === "admin");
         
-        // --- PERFORMANCE & SHOE LOGIC ---
-        const intensity = parseFloat(p.playIntensity) || 2.5;
-        const days = Math.floor((Date.now() - (p.shoePurchaseDate || Date.now())) / (1000*60*60*24)) || 30;
-        const wearScore = (days * intensity);
-
+        // Performance logic for badges
         let wearStatus = "Fresh";
-        let wearColor = "#2ecc71"; // Green
+        let wearColor = "#2ecc71";
 
-        if (p.shoeWearStatus === "smooth" || wearScore >= 150) {
-            wearStatus = "High Wear";
-            wearColor = "#ff4b4b"; // Red
-        } else if (p.shoeWearStatus === "average" || wearScore >= 50) {
-            wearStatus = "Average Wear";
-            wearColor = "#4b79ff"; // Blue (StringVault Brand)
+        if (p.shoeWearStatus === "smooth") {
+            wearStatus = "🚨 High Wear/Uneven";
+            wearColor = "#ff4b4b";
+        } else if (p.shoeWearStatus === "average") {
+            wearStatus = "Average";
+            wearColor = "#4b79ff";
         }
 
         div.innerHTML = `
-            <div class="title"><h3>${escapeHtml(p.name)} (${p.age || '?'})</h3></div>
+            <div class="title"><h3>${escapeHtml(p.name)}</h3></div>
             <div class="badges">
-                <span class="badge" style="border-color:${wearColor}; color:${wearColor};">Setup: ${wearStatus}</span>
-                <span class="badge">UTR: ${p.utr || 'N/A'}</span>
-                <span class="badge">${escapeHtml(p.racketModel)} [${p.pattern || '16x19'}]</span>
+                <span class="badge" style="border-color:${wearColor}; color:${wearColor};">${wearStatus}</span>
+                <span class="badge">Feel: ${p.weeklyFeeling || 50}</span>
+                <span class="badge">FH: ${p.forehandGrip || 'N/A'}</span>
+                <span class="badge">${escapeHtml(p.racketModel)}</span>
                 <span class="badge">${p.tensionMain}/${p.tensionCross} lbs</span>
-                ${p.usedBallMachine ? '<span class="badge" style="background:#4b79ff; color:white; border:none;">Ball Machine</span>' : ''}
-                <span class="badge" style="border-color:#4b79ff; color:#4b79ff;">Feel: ${p.weeklyFeeling || 50}</span>
             </div>
             <div class="actions" style="margin-top:10px;">
                 ${canEdit ? `<button class="btn" onclick="editPlayer('${p.id}')">Edit</button>` : ""}
@@ -211,26 +249,26 @@ function editPlayer(id) {
     $("tensionMain").value = p.tensionMain || "";
     $("tensionCross").value = p.tensionCross || "";
     $("setupRating").value = p.setupRating || "";
+    $("forehandGrip").value = p.forehandGrip || "";
+    $("backhandGrip").value = p.backhandGrip || "";
     
-    // StringVault New Fields
     if($("playIntensity")) $("playIntensity").value = p.playIntensity || "2.5";
     if($("shoeWearStatus")) $("shoeWearStatus").value = p.shoeWearStatus || "average";
-    
     if($("weeklyFeeling")) $("weeklyFeeling").value = p.weeklyFeeling || 50;
+    
     $("usedBallMachine").checked = p.usedBallMachine || false;
     $("notes").value = p.notes || "";
+    
+    checkWearWarning();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 $("playerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = $("playerId").value || Math.random().toString(16).slice(2);
-    const machineUsed = $("usedBallMachine").checked;
     
-    // Math for Alert
-    const intensity = parseFloat($("playIntensity").value) || 2.5;
+    const fhGrip = $("forehandGrip").value;
     const shoeStatus = $("shoeWearStatus").value;
-    const wearScore = (30 * intensity); // Assume 30 day window baseline
 
     const data = {
         name: $("name").value.trim(),
@@ -244,10 +282,12 @@ $("playerForm").addEventListener("submit", async (e) => {
         tensionMain: $("tensionMain").value,
         tensionCross: $("tensionCross").value,
         setupRating: $("setupRating").value,
+        forehandGrip: fhGrip,
+        backhandGrip: $("backhandGrip").value,
         playIntensity: $("playIntensity").value,
         shoeWearStatus: shoeStatus,
         weeklyFeeling: $("weeklyFeeling") ? $("weeklyFeeling").value : 50,
-        usedBallMachine: machineUsed,
+        usedBallMachine: $("usedBallMachine").checked,
         notes: $("notes").value.trim(),
         updatedAt: Date.now(),
         lastUpdatedBy: auth.currentUser.email.toLowerCase()
@@ -256,17 +296,18 @@ $("playerForm").addEventListener("submit", async (e) => {
     try {
         await db.collection("players").doc(id).set(data);
         
-        let performanceImpact = "";
-        if (shoeStatus === "smooth" || wearScore >= 150) {
-            performanceImpact = "\n\n🚨 Vault Alert: Your foundation is no longer level. Slanted base detected.";
-        } else if (shoeStatus === "average") {
-            performanceImpact = "\n\n✅ Vault Status: Setup is stable. Optimal broken-in phase.";
+        let alertMsg = "Profile Saved to StringVault.us!";
+        if (shoeStatus === "smooth") {
+            alertMsg += "\n\n🚨 WARNING: Uneven sole detected (Toe Drag/Slanted Base). Foundation is compromised.";
+        }
+        if (fhGrip === "Hawaiian" || fhGrip === "Full Western") {
+            alertMsg += "\n⚠️ NOTE: Extreme grip will cause high friction; monitor string notching.";
         }
 
-        alert("Profile Saved to StringVault.us!" + performanceImpact);
-        
+        alert(alertMsg);
         $("playerId").value = "";
         $("playerForm").reset();
+        checkWearWarning();
     } catch (err) { alert("Error saving profile."); }
 });
 
