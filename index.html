@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
   <title>StringVault.us</title>
+  
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#111111" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
@@ -19,14 +22,14 @@
         <img src="./icons/icon-192.png" width="40" height="40" style="border-radius: 8px;">
         <h1>StringVault<span style="color: var(--accent);">.us</span></h1>
       </div>
-      <p style="margin-bottom: 25px; color: var(--muted);">Authorized Personnel Only</p>
+      <p style="margin-bottom: 25px; color: var(--muted); font-size: 14px;">Authorized Personnel Only</p>
       
       <form id="loginForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px;">
         <input id="loginEmail" type="email" autocomplete="username" placeholder="Email" required />
         <input id="loginPass" type="password" autocomplete="current-password" placeholder="Password" required />
         
         <div class="row">
-          <button type="submit" onclick="handleEmailLogin()" class="btn primary" style="flex:1">Login</button>
+          <button type="button" onclick="handleEmailLogin()" class="btn primary" style="flex:1">Login</button>
           <button type="button" onclick="handleEmailSignUp()" class="btn" style="flex:1">Sign Up</button>
         </div>
       </form>
@@ -46,26 +49,27 @@
         <div style="display: flex; align-items: center; gap: 12px;">
           <img src="./icons/icon-192.png" width="42" height="42" style="border-radius: 10px; border: 1px solid var(--line);">
           <div>
-            <h1 style="font-size: 24px; letter-spacing: -0.5px;">StringVault<span style="color: var(--accent);">.us</span></h1>
-            <p class="sub" style="margin-top: -2px;">Equipment & Performance Vault</p>
+            <h1 style="font-size: 20px; letter-spacing: -0.5px;">StringVault<span style="color: var(--accent);">.us</span></h1>
+            <p class="sub" style="margin-top: -2px; font-size: 11px; opacity: 0.7;">Equipment & Performance Vault</p>
           </div>
         </div>
-        <button onclick="handleLogout()" class="btn" style="padding: 5px 12px; font-size: 12px; background: #ff4b4b; color: white; border:none;">Logout</button>
+        <button onclick="handleLogout()" class="btn" style="padding: 6px 12px; font-size: 12px; background: #ff4b4b; color: white; border:none;">Logout</button>
       </div>
     </header>
 
     <main class="wrap">
+      
       <aside id="toolbox" class="card" style="margin-bottom: 20px; border: 1px solid var(--line);">
-        <h3 style="font-size: 14px; text-transform: uppercase; color: var(--muted); margin-bottom: 15px;">Toolbox</h3>
-        <div class="tool-section" style="margin-bottom: 15px;">
-          <label><span>Tension Loss Predictor</span></label>
-          <input type="date" id="stringingDate" onchange="calculateTensionLoss()" style="margin-top: 5px;">
-          <div id="tensionResult" style="margin-top: 8px; font-size: 13px; font-weight: bold; padding: 10px; background: #f9f9f9; border-radius: 8px; color: #666;">
-            Select date to see loss %
+        <h3 style="font-size: 12px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; letter-spacing: 1px;">Toolbox</h3>
+        
+        <div class="tool-section">
+          <label><span style="font-size: 13px;">Tension Loss Calculator</span></label>
+          <div class="row" style="margin-top: 5px; gap: 10px;">
+            <input type="date" id="stringingDate" onchange="calculateTensionLoss()" style="flex:1; font-size: 13px;">
           </div>
-        </div>
-        <div id="adminLink" style="display: none; border-top: 1px solid var(--line); padding-top: 15px;">
-          <button class="btn primary" onclick="openAdminDashboard()" style="width: 100%; font-size: 12px;">Admin Dashboard</button>
+          <div id="tensionResult" style="margin-top: 8px; font-size: 12px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 6px; color: #666; border: 1px solid var(--line);">
+            Select stringing date above.
+          </div>
         </div>
       </aside>
 
@@ -100,7 +104,7 @@
           </div>
 
           <hr style="border: 0; border-top: 1px solid var(--line); margin: 20px 0;" />
-          <h3 style="font-size: 14px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Racket Setup</h3>
+          <h3 style="font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; letter-spacing: 1px;">Racket Setup</h3>
           
           <div class="row">
             <label style="flex: 2;">
@@ -124,33 +128,31 @@
           </div>
 
           <hr style="border: 0; border-top: 1px solid var(--line); margin: 20px 0;" />
-          <h3 style="font-size: 14px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Physicals & Equipment Status</h3>
+          <h3 style="font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; letter-spacing: 1px;">Physicals & Status</h3>
 
           <div class="row">
             <label style="flex: 1;">
               <span>Shoe Wear Status</span>
               <select id="shoeWearStatus" onchange="checkWearWarning()">
-                  <option value="fresh">🌟 Fresh (Full Traction)</option>
-                  <option value="average" selected>✅ Average (Normal Use)</option>
-                  <option value="moderate">🟡 Moderate (Traction Loss)</option>
-                  <option value="smooth">🚨 High Wear (Injury Risk)</option>
+                  <option value="fresh">🌟 Fresh</option>
+                  <option value="average" selected>✅ Average</option>
+                  <option value="moderate">🟡 Moderate</option>
+                  <option value="smooth">🚨 High Wear</option>
               </select>
             </label>
             <label style="flex: 1;">
               <span>Ball Machine / Week</span>
               <select id="ballMachineUsage">
                   <option value="none">No Machine</option>
-                  <option value="light">Light (1-2x / week)</option>
-                  <option value="heavy">Heavy (3x+ / week)</option>
+                  <option value="light">Light (1-2x)</option>
+                  <option value="heavy">Heavy (3x+)</option>
               </select>
             </label>
           </div>
 
-          
+          <div id="wearReference" style="margin-top:10px; padding:12px; border-radius:8px; font-size:12px; display:none;"></div>
 
-          <div id="wearReference" style="margin-top:10px; padding:12px; border-radius:8px; background:rgba(75, 121, 255, 0.05); font-size:12px; border: 1px solid var(--line); display:none;"></div>
-
-          <div class="row">
+          <div class="row" style="margin-top: 15px;">
             <label style="flex: 1;">
               <span>Forehand Grip</span>
               <select id="forehandGrip"></select>
@@ -167,7 +169,7 @@
               <select id="playIntensity">
                   <option value="1.0">Low (1-2x / week)</option>
                   <option value="2.5" selected>Moderate (3-4x / week)</option>
-                  <option value="5.0">High (5x+ Elite/Heavy)</option>
+                  <option value="5.0">High (5x+ Elite)</option>
               </select>
             </label>
             <label style="flex: 1;">
@@ -186,31 +188,33 @@
           <label><span>Notes</span><textarea id="notes" rows="3" placeholder="Notes on performance, string feel, or footwork..."></textarea></label>
 
           <div class="row" style="margin-top: 20px;">
-            <button type="submit" class="btn primary" style="flex: 2;">Save Profile to Vault</button>
+            <button type="submit" class="btn primary" style="flex: 1; padding: 12px;">Save Profile to Vault</button>
           </div>
         </form>
       </section>
 
       <section class="card">
-        <div class="row space" style="flex-wrap: wrap; gap: 10px;">
-          <h2>Vault Records</h2>
-          <div class="row" style="margin-top: 0; flex: 1; justify-content: flex-end; gap: 5px;">
-            <input id="search" placeholder="Search..." oninput="render()" style="width: 120px; margin-top:0; padding: 8px;" />
-            <select id="sortBy" onchange="render()" style="width: 110px; margin-top:0; padding: 8px; font-size: 12px;">
-              <option value="name">A-Z</option>
-              <option value="newest">Recent</option>
-              <option value="ratingHigh">Score (High)</option>
-              <option value="feelingHigh">Feeling (High)</option>
-            </select>
+        <div class="row space" style="flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
+          <h2 style="margin: 0;">Vault Records</h2>
+          
+          <div style="display: flex; gap: 5px;">
+            <input id="search" placeholder="Search..." oninput="render()" style="width: 110px; padding: 6px; font-size: 13px;" />
+            <select id="sortBy" onchange="render()" style="width: 100px; padding: 6px; font-size: 13px;">
+  <option value="newest">Recent</option>
+  <option value="name">A-Z</option>
+  <option value="ratingHigh">Score (High)</option>
+  <option value="feelingHigh">Feel (High)</option>
+</select>
           </div>
         </div>
+        
         <div id="playerList" class="list"></div>
         <p id="empty" class="empty">Vault empty.</p>
       </section>
     </main>
   </div> 
 
-  <div id="iosPrompt" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; background:white; color:#333; padding:20px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; border: 2px solid #4b79ff;">
+  <div id="iosPrompt" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; background:white; color:#333; padding:20px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; border: 2px solid var(--accent);">
     <h4 style="margin-bottom:10px;">Install StringVault</h4>
     <p style="font-size:14px; margin-bottom:15px;">1. Tap the <strong>Share</strong> icon.<br>2. Tap <strong>Add to Home Screen</strong>.</p>
     <button onclick="document.getElementById('iosPrompt').style.display='none'" class="btn primary" style="width:100%;">Got it!</button>
@@ -226,6 +230,18 @@
       navigator.serviceWorker.register("./sw.js")
         .then(() => console.log("SW Active"))
         .catch(err => console.log("SW Failed", err));
+    }
+    
+    // Simple iOS detection for the prompt
+    const isIos = () => {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      return /iphone|ipad|ipod/.test(userAgent);
+    }
+    const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
+    
+    if (isIos() && !isInStandaloneMode()) {
+        // Uncomment below to show prompt on iOS devices not in app mode
+        // document.getElementById('iosPrompt').style.display = 'block';
     }
   </script>
 </body>
