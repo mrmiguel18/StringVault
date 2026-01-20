@@ -1,4 +1,4 @@
-/* StringVault Service Worker — v2(updated photo/changed name) */
+/* StringVault Service Worker — v2 (Updated branding & asset strategy) */
 
 const CACHE_NAME = "stringvault-v2";
 const ASSETS = [
@@ -12,9 +12,8 @@ const ASSETS = [
   "./icons/icon-512.png"
 ];
 
-// 1. Install Phase: Cache the updated assets
+// 1. Install Phase: Cache the core UI assets
 self.addEventListener("install", (event) => {
-  // Forces the waiting service worker to become the active service worker
   self.skipWaiting(); 
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -24,45 +23,52 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// 2. Activate Phase: Delete OLD StringIQ caches
+// 2. Activate Phase: Clean up old StringIQ caches to free up device space
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    // This deletes any old caches that don't match the current CACHE_NAME
+    // This deletes any old caches that don't match "stringvault-v2"
     await Promise.all(
       keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
     );
-    // Take control of all pages immediately
+    // Take control of all open tabs immediately
     await self.clients.claim(); 
-    console.log("StringVault: Cache cleaned and active");
+    console.log("StringVault: Cache migration complete and active");
   })());
 });
 
 // 3. Fetch Phase: Network-first strategy with cache fallback
+// Optimized for equipment tracking where data accuracy is priority
 self.addEventListener("fetch", (event) => {
-  event.respondWith((async () => {
-    // Check cache first
-    const cached = await caches.match(event.request);
-    if (cached) return cached;
+  // We only handle GET requests (Firebase handles its own data syncing)
+  if (event.request.method !== 'GET') return;
 
+  event.respondWith((async () => {
     try {
-      // If not in cache, try network
-      const res = await fetch(event.request);
+      // Try network first for the most up-to-date data
+      const networkResponse = await fetch(event.request);
       
-      // If we got a valid response, save it to cache for next time
-      if (res && res.status === 200) {
+      // If network is successful, update the cache with this new version
+      if (networkResponse && networkResponse.status === 200) {
         const cache = await caches.open(CACHE_NAME);
-        cache.put(event.request, res.clone());
+        cache.put(event.request, networkResponse.clone());
       }
       
-      return res;
+      return networkResponse;
     } catch (error) {
-      // Offline fallback: If user is offline and trying to navigate
+      // If network fails (Offline), check the cache
+      const cachedResponse = await caches.match(event.request);
+      if (cachedResponse) return cachedResponse;
+
+      // If neither work and it's a page navigation, show offline.html
       if (event.request.mode === "navigate") {
         return caches.match("./offline.html");
       }
-      return new Response("Network error", { status: 408 });
+      
+      return new Response("Offline: Connection lost", { 
+        status: 503, 
+        statusText: "Service Unavailable" 
+      });
     }
   })());
 });
-
