@@ -104,11 +104,8 @@ function checkWearWarning() {
     refBox.style.display = status ? "block" : "none";
 }
 
-
-
 // --- UI POPULATION ---
 function initDropdowns() {
-    // Populate Rackets
     const rackEl = $("racketModel");
     if (rackEl) {
         rackEl.innerHTML = '<option value="">-- Select Racket --</option>';
@@ -122,7 +119,6 @@ function initDropdowns() {
         }
     }
 
-    // Populate Patterns
     const patEl = $("pattern");
     if (patEl) {
         const patterns = ["16x19", "18x20", "16x18", "16x20", "18x19"];
@@ -130,7 +126,6 @@ function initDropdowns() {
         patterns.forEach(p => patEl.add(new Option(p, p)));
     }
 
-    // Populate Strings
     const populateStrings = (el) => {
         if (!el) return;
         el.innerHTML = '<option value="">-- Select String --</option>';
@@ -144,9 +139,6 @@ function initDropdowns() {
     populateStrings($("stringMain"));
     populateStrings($("stringCross"));
 
-    
-
-    // Populate Grips
     const populateGrips = (el) => {
         if (!el) return;
         el.innerHTML = '<option value="">-- Select Grip --</option>';
@@ -155,9 +147,6 @@ function initDropdowns() {
     populateGrips($("forehandGrip"));
     populateGrips($("backhandGrip"));
 
-    
-
-    // Populate Tensions
     const tm = $("tensionMain"), tc = $("tensionCross");
     if (tm && tm.options.length <= 1) {
         for(let i=35; i<=70; i++) {
@@ -178,7 +167,21 @@ function initApp() {
 function render() {
     const list = $("playerList");
     const q = ($("search")?.value || "").toLowerCase().trim();
+    const sortVal = $("sortBy")?.value || "name";
+    
     let filtered = allPlayers.filter(p => (p.name || "").toLowerCase().includes(q));
+
+    filtered.sort((a, b) => {
+        switch(sortVal) {
+            case "name": return (a.name || "").localeCompare(b.name || "");
+            case "newest": return (b.updatedAt || 0) - (a.updatedAt || 0);
+            case "ratingHigh": return (Number(b.setupRating) || 0) - (Number(a.setupRating) || 0);
+            case "ratingLow": return (Number(a.setupRating) || 0) - (Number(b.setupRating) || 0);
+            case "feelingHigh": return (Number(b.weeklyFeeling) || 0) - (Number(a.weeklyFeeling) || 0);
+            case "feelingLow": return (Number(a.weeklyFeeling) || 0) - (Number(b.weeklyFeeling) || 0);
+            default: return 0;
+        }
+    });
 
     list.innerHTML = "";
     $("empty").style.display = filtered.length ? "none" : "block";
@@ -191,7 +194,8 @@ function render() {
         div.innerHTML = `
             <div class="title"><h3>${escapeHtml(p.name)}</h3></div>
             <div class="badges">
-                <span class="badge" style="background:#4b79ff; color:white; border:none;">Score: ${p.setupRating || 0}</span>
+                <span class="badge" style="background:#4b79ff; color:white; border:none;">Setup: ${p.setupRating || 0}</span>
+                <span class="badge" style="background:#2ecc71; color:white; border:none;">Feel: ${p.weeklyFeeling || 0}</span>
                 <span class="badge">${p.racketModel}</span>
                 <span class="badge">${p.ballMachineUsage === 'none' ? 'No Machine' : '🤖 Machine User'}</span>
             </div>
@@ -217,8 +221,10 @@ function editPlayer(id) {
     $("forehandGrip").value = p.forehandGrip || "";
     $("backhandGrip").value = p.backhandGrip || "";
     $("setupRating").value = p.setupRating || "";
+    $("weeklyFeeling").value = p.weeklyFeeling || "";
     $("shoeWearStatus").value = p.shoeWearStatus || "average";
     $("ballMachineUsage").value = p.ballMachineUsage || "none";
+    $("playIntensity").value = p.playIntensity || "2.5";
     $("notes").value = p.notes || "";
     checkWearWarning();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -239,8 +245,10 @@ $("playerForm").addEventListener("submit", async (e) => {
         forehandGrip: $("forehandGrip")?.value || "",
         backhandGrip: $("backhandGrip")?.value || "",
         setupRating: $("setupRating").value,
+        weeklyFeeling: $("weeklyFeeling").value,
         shoeWearStatus: $("shoeWearStatus").value,
         ballMachineUsage: $("ballMachineUsage").value,
+        playIntensity: $("playIntensity").value,
         notes: $("notes").value.trim(),
         updatedAt: Date.now(),
         lastUpdatedBy: auth.currentUser.email.toLowerCase()
